@@ -1,0 +1,5 @@
+Faker==37.1.0
+functions_framework==3.8.2
+pandas==2.2.3
+Requests==2.32.3
+protobuf~=6.31.0rc2

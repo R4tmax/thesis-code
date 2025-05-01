@@ -1,8 +1,7 @@
 import functions_framework
 import os
 from google.cloud import bigquery
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+import requests
 
 @functions_framework.http
 def check_and_send_alert(request):
@@ -13,12 +12,12 @@ def check_and_send_alert(request):
     client = bigquery.Client(project=project_id)
     query = f"""
         SELECT alert_message FROM `{project_id}.{dataset}.{table}`
-        WHERE DATE(_PARTITIONTIME) = CURRENT_DATE() OR TRUE
+        WHERE DATE(_PARTITIONTIME) = CURRENT_DATE()
         LIMIT 1
     """
     result = client.query(query).result()
-
     rows = list(result)
+
     if rows:
         alert_message = rows[0]['alert_message']
         send_email(alert_message)
@@ -26,11 +25,16 @@ def check_and_send_alert(request):
     return 'Checked alerts', 200
 
 def send_email(message):
-    sg = SendGridAPIClient(os.environ['SENDGRID_API_KEY'])
-    email = Mail(
-        from_email='alerts@yourdomain.com',
-        to_emails='team@yourdomain.com',
-        subject='BigQuery Alert 🚨',
-        plain_text_content=message
+    MAILGUN_DOMAIN = os.environ['MAILGUN_DOMAIN']
+    MAILGUN_API_KEY = os.environ['MAILGUN_API_KEY']
+    response = requests.post(
+        f"https://api.mailgun.net/v3/{MAILGUN_DOMAIN}/messages",
+        auth=("api", MAILGUN_API_KEY),
+        data={
+            "from": f"alerts@{MAILGUN_DOMAIN}",
+            "to": ["team@yourdomain.com"],
+            "subject": "BigQuery Alert 🚨",
+            "text": message
+        }
     )
-    sg.send(email)
+    response.raise_for_status()

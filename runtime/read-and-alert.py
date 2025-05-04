@@ -1,40 +1,76 @@
 import functions_framework
-import os
 from google.cloud import bigquery
 import requests
+import logging
+
 
 @functions_framework.http
-def check_and_send_alert(request):
-    project_id = os.environ['GCP_PROJECT']
-    dataset = 'alerts_tmp'
-    table = 'missing_sales_alert'
+def read_and_alert(request):
+    try:
+        # Initialize BigQuery client
+        bq_client = bigquery.Client()
 
-    client = bigquery.Client(project=project_id)
-    query = f"""
-        SELECT alert_message FROM `{project_id}.{dataset}.{table}`
-        WHERE DATE(_PARTITIONTIME) = CURRENT_DATE()
-        LIMIT 1
-    """
-    result = client.query(query).result()
-    rows = list(result)
+        # Query to fetch invoice information
+        query = """
+        SELECT 
+            invoice_id, 
+            customer_id, 
+            customer_name, 
+            issue_date, 
+            due_date, 
+            amount, 
+            currency, 
+            status, 
+            paid_date
+        FROM `dataproject-458415.dwh_develop.synth_invoices`
+        """
 
-    if rows:
-        alert_message = rows[0]['alert_message']
-        send_email(alert_message)
+        results = list(bq_client.query(query).result())
 
-    return 'Checked alerts', 200
+        # First alert type: Number of unpaid invoices
+        unpaid_invoices = [r for r in results if r.paid_date is None]
+        if len(unpaid_invoices) > 10:  # Set your own threshold
+            send_email(f"Alert: {len(unpaid_invoices)} unpaid invoices found!")
 
-def send_email(message):
-    MAILGUN_DOMAIN = os.environ['MAILGUN_DOMAIN']
-    MAILGUN_API_KEY = os.environ['MAILGUN_API_KEY']
-    response = requests.post(
-        f"https://api.mailgun.net/v3/{MAILGUN_DOMAIN}/messages",
-        auth=("api", MAILGUN_API_KEY),
-        data={
-            "from": f"alerts@{MAILGUN_DOMAIN}",
-            "to": ["team@yourdomain.com"],
-            "subject": "BigQuery Alert 🚨",
-            "text": message
-        }
-    )
-    response.raise_for_status()
+        # Second alert type: Number of high-value invoices
+        high_value_invoices = [r for r in results if r.amount > 10000]
+        if len(high_value_invoices) > 5:  # Set your own threshold
+            send_email(f"Alert: {len(high_value_invoices)} high-value invoices found!")
+
+        # Third alert type: Total value of unpaid invoices
+        unpaid_sum = sum(r.amount for r in unpaid_invoices)
+        if unpaid_sum > 100000:  # Set your own threshold
+            send_email(f"Alert: Total unpaid invoices amount exceeds 100,000 USD!")
+
+        # Return successful response if everything went fine
+        return ("Alert check completed.", 200)
+
+    except Exception as e:
+        logging.exception("Error during alert check.")
+        return (f"Error occurred: {str(e)}", 500)
+
+
+def send_email(alert_message):
+    """Send an email with the alert message."""
+    try:
+        # Load credentials from Secret Manager (API key, domain)
+        MAILGUN_API = "MAILGUN_API"
+        MAILGUN_DOMAIN = "MAILGUN_DOMAIN"
+        RECIPIENT = "RECIPIENT"
+
+        # Send the email via Mailgun
+        response = requests.post(
+            f"https://api.mailgun.net/v3/{MAILGUN_DOMAIN}/messages",
+            auth=("api", MAILGUN_API),
+            data={
+                "from": f"Alert System <alert@{MAILGUN_DOMAIN}>",
+                "to": RECIPIENT,
+                "subject": "Invoice Alert Detected!",
+                "text": alert_message
+            }
+        )
+        response.raise_for_status()
+        logging.info("Alert email sent successfully.")
+    except requests.exceptions.RequestException as e:
+        logging.exception("Failed to send alert email.")
+        raise

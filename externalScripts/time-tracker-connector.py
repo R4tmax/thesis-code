@@ -8,7 +8,7 @@ GITLAB_PROJECT_ID = "69058284"  # e.g., 123456
 GITLAB_API_URL = f"https://gitlab.com/api/v4/projects/{GITLAB_PROJECT_ID}/issues"
 
 GOOGLE_SHEET_NAME = "Null Hypothesis time report"
-CREDENTIALS_FILE = "path/to/your-service-account.json"
+CREDENTIALS_FILE = r"C:\Users\kadle\Codes\dp_automateddwh\.secrets\dataproject-458415-9925d2283dfa.json"
 
 # --- SETUP GOOGLE SHEETS ---
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]

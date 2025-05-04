@@ -24,11 +24,11 @@ issues = response.json()
 
 # --- CLEAR EXISTING SHEET & SET HEADERS ---
 sheet.clear()
-sheet.append_row(["Issue ID", "Title", "Time Spent (secs)", "Time Estimate", "Assignee"])
+sheet.append_row(["Issue ID", "Title", "Time Spent (h)", "Assignee"])
 
 # --- PROCESS AND WRITE TO SHEET ---
 for issue in issues:
-    spent = issue["time_stats"]["total_time_spent"]
+    spent = issue["time_stats"]["total_time_spent"] /3600
     estimate = issue["time_stats"]["time_estimate"]
     assignee = issue["assignee"]["name"] if issue.get("assignee") else "Unassigned"
 
@@ -36,7 +36,6 @@ for issue in issues:
         issue["iid"],
         issue["title"],
         spent,
-        estimate,
         assignee
     ])
 

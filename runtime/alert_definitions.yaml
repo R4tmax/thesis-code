@@ -18,7 +18,7 @@
   recipients:
     - hajek.jakub98@gmail.com
   email_subject: "High-Value Invoices Report"
-  alert_kind: "trigger"
+  alert_kind: "report"
   enabled: true
   threshold: 0
   severity: "info"

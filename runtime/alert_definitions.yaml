@@ -4,9 +4,8 @@
   link: "https://docs.google.com/spreadsheets/d/1RRNcQdD2aAUcmeMbUz0JJgrJutjiGd1ynl2XXVkNecE/edit?usp=sharing"
   recipients:
     - hajek.jakub98@gmail.com
-    - hajek.jakub98@gmail.com
   email_subject: "Unpaid Invoices Alert"
-  alert_kind: "trigger"
+  alert_kind: "report"
   enabled: true
   threshold: 0
   severity: "warning"
@@ -22,3 +21,29 @@
   enabled: true
   threshold: 0
   severity: "info"
+
+- type: "Unpaid Invoices2"
+  query: "SELECT COUNT(*) as count FROM `dataproject-458415.dwh_develop.mv_unpaid_invoices`"
+  message_template: "Found {{count}} unpaid invoices. 2"
+  link: "https://docs.google.com/spreadsheets/d/1RRNcQdD2aAUcmeMbUz0JJgrJutjiGd1ynl2XXVkNecE/edit?usp=sharing"
+  recipients:
+    - kadlec.m.90@gmail.com
+    - hajek.jakub98@gmail.com
+  email_subject: "Unpaid Invoices Alert2"
+  alert_kind: "report"
+  enabled: true
+  threshold: 0
+  severity: "warning"
+
+- type: "Unpaid Invoices3"
+  query: "SELECT COUNT(*) as count FROM `dataproject-458415.dwh_develop.mv_unpaid_invoices`"
+  message_template: "Found {{count}} unpaid invoices.3"
+  link: "https://docs.google.com/spreadsheets/d/1RRNcQdD2aAUcmeMbUz0JJgrJutjiGd1ynl2XXVkNecE/edit?usp=sharing"
+  recipients:
+    - MichalNguyen00@gmail.com
+    - hajek.jakub98@gmail.com
+  email_subject: "Unpaid Invoices Alert"
+  alert_kind: "trigger"
+  enabled: true
+  threshold: 0
+  severity: "warning"

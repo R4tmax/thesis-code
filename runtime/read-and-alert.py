@@ -1,10 +1,18 @@
 import functions_framework
 from google.cloud import bigquery
+from google.cloud import secretmanager
+
 import requests
 import logging
+import base64
+import json
+from email.mime.text import MIMEText
 from jinja2 import Template
 import yaml
-from google.cloud import secretmanager
+
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
 
 # Configure basic logging
 logging.basicConfig(level=logging.INFO)
@@ -148,10 +156,54 @@ def build_report_message(report_alerts):
 # EMAIL SENDING LOGIC
 # ─────────────────────────────────────────────────────────────
 
+
+# Gmail API private account
 def send_email(alert_message: str, alert_type: str, subject: str, recipients: list):
     """
-    Send an email using Mailgun API with an HTML alert message.
+    Send an email using Gmail API with an HTML alert message.
+    Gmail API credentials are loaded from Secret Manager.
     """
+    try:
+        client_id = get_secret("Gmail_client_id")
+        client_secret = get_secret("Gmail_client_secret")
+        refresh_token = get_secret("Gmail_refresh_token")
+        sender_email = "email.alerttestbot@gmail.com"
+
+        creds = Credentials(
+            None,
+            refresh_token=refresh_token,
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=client_id,
+            client_secret=client_secret
+        )
+        if not creds.valid or creds.expired:
+            creds.refresh(Request())
+
+        service = build('gmail', 'v1', credentials=creds)
+
+        with open("email_template.html", "r") as f:
+            html_template = f.read()
+        template = Template(html_template)
+        rendered_html = template.render(alert_type=alert_type, alert_message=alert_message)
+
+        for recipient in recipients:
+            message = MIMEText(rendered_html, "html")
+            message["to"] = recipient
+            message["from"] = sender_email
+            message["subject"] = subject
+            raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+
+            response = service.users().messages().send(
+                userId="me", body={"raw": raw_message}).execute()
+            logging.info(f"Email sent to {recipient}, message ID: {response.get('id')}")
+
+    except Exception:
+        logging.exception("Failed to send Gmail.")
+        raise
+
+"""
+# MAILGUN
+def send_email(alert_message: str, alert_type: str, subject: str, recipients: list):
     try:
         MAILGUN_API = get_secret("mailgun_api")
         MAILGUN_DOMAIN = get_secret("mailgun_domain")
@@ -164,7 +216,7 @@ def send_email(alert_message: str, alert_type: str, subject: str, recipients: li
 
         for recipient in recipients:
             response = requests.post(
-                f"https://api.mailgun.net/v3/{MAILGUN_DOMAIN}/messages",
+                f"https://api.eu.mailgun.net/v3/{MAILGUN_DOMAIN}/messages",
                 auth=("api", MAILGUN_API),
                 data={
                     "from": f"Alert System <alert@{MAILGUN_DOMAIN}>",
@@ -182,7 +234,7 @@ def send_email(alert_message: str, alert_type: str, subject: str, recipients: li
     except Exception:
         logging.exception("General error while sending email.")
         raise
-
+"""
 # ─────────────────────────────────────────────────────────────
 # SECRET MANAGER ACCESS
 # ─────────────────────────────────────────────────────────────
@@ -201,3 +253,5 @@ def get_secret(secret_id: str) -> str:
     except Exception:
         logging.exception(f"Failed to get secret: {secret_id}")
         raise
+
+

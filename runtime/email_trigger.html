@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ alert_type }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 20px; background-color: #f9f9f9; font-family: Arial, sans-serif; color: #333;">
+
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; border: 1px solid #ddd;">
+
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img src="https://i.ibb.co/q3Y484t3/behavio7.png" alt="Company Logo" style="max-width: 300px; width: 100%; height: auto;">
+        </div>
+
+        <h2 style="margin-top: 0; background-color: #d9534f; color: #ffffff; padding: 20px; border-radius: 6px; font-size: 20px;">
+            ⚠️ {{ alert_type }}
+        </h2>
+
+        <p style="font-size: 16px; line-height: 1.5; margin: 20px 0;">
+            {{ alert_message|safe }}
+        </p>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{ link }}" style="display: inline-block; background-color: #0C66EE; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-size: 16px;">
+                📄 Zobrazit detaily
+            </a>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+        <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">
+            Tento e-mail byl vygenerován automaticky. Neodpovídejte na něj.<br>
+            Potřebujete pomoc? Kontaktujte nás na
+            <a href="mailto:podpora@firma.cz" style="color: #888; text-decoration: underline;">podpora@firma.cz</a>.
+        </p>
+
+    </div>
+
+</body>
+</html>

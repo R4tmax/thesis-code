@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>Monthly Report</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 30px; background-color: #f9f9f9; font-family: Arial, sans-serif; color: #333;">
+
+    <div style="max-width: 700px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+
+        <!-- Hlavička -->
+        <h2 style="color: #2c3e50; margin-top: 0;">📊 Monthly Report</h2>
+        <p style="font-size: 15px; color: #666; margin-bottom: 30px;">Souhrn upozornění:</p>
+
+        <!-- Bloky upozornění -->
+        {% for view in views %}
+            <div style="background-color: #f1f3f5; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
+                <h3 style="color: #222; font-size: 18px; margin: 0 0 10px;">{{ view.alert_type }}</h3>
+                <p style="color: #555; font-size: 15px; line-height: 1.6; margin: 0 0 10px;">{{ view.alert_message }}</p>
+                <div style="text-align: right; margin-top: 10px;">
+                    <a href="{{ view.link }}" style="display: inline-block; background-color: #28a745; color: #ffffff; padding: 10px 18px; font-size: 14px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+                        🔍 Zobrazit
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+
+        <!-- Patička -->
+        <p style="font-size: 12px; color: #aaa; margin-top: 50px; text-align: center;">
+            Tento e-mail byl vygenerován automaticky systémem pro alerty.
+        </p>
+
+    </div>
+
+</body>
+</html>

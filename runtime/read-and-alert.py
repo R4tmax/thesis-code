@@ -126,10 +126,10 @@ def send_email_mailgun(subject: str, recipients: list, html_body: str):
 
 
 def send_email(
-    alert_message: str,
     alert_type: str,
     subject: str,
     recipients: list,
+    alert_message: str = None,
     template_name: str = "single",
     views: list = None,
     link: str = None,
@@ -193,9 +193,8 @@ def send_alert_report(report_alerts: list):
         report_context = build_report_message(alerts)
         logging.info(f"Sending report email to {recipient} with {len(alerts)} alerts.")
         send_email(
-            alert_message="",  # Not used in report
             alert_type="Summary Report",
-            subject="Alerts Report",
+            subject="Summary Report",
             recipients=[recipient],
             template_name="report",
             views=report_context["views"],

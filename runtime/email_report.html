@@ -8,10 +8,14 @@
 <body style="margin: 0; padding: 30px; background-color: #f9f9f9; font-family: Arial, sans-serif; color: #333;">
 
     <div style="max-width: 700px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-
+        <div style="margin-bottom: 30px; text-align: center;">
+            <img src="https://i.ibb.co/q3Y484t3/behavio7.png" alt="Logo" style="max-width: 300px; width: 100%; height: auto">
+        </div>
         <!-- Hlavička -->
-        <h2 style="color: #2c3e50; margin-top: 0;">📊 Monthly Report</h2>
-        <p style="font-size: 15px; color: #666; margin-bottom: 30px;">Souhrn upozornění:</p>
+        <h2 style="color: #ffffff; font-size: 24px; margin: 0 0 20px 0; padding: 20px; border-radius: 6px; background-color: #0C66EE;">{{alert_type}}</h2>
+        <p style="color: #555; font-size: 16px; margin-bottom: 30px; line-height: 1.6;">
+            Vyberte si, kterou část reportu si chcete zobrazit.
+        </p>
 
         <!-- Bloky upozornění -->
         {% for view in views %}

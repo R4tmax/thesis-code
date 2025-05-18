@@ -1,28 +1,32 @@
-from diagrams import Diagram, Cluster, Edge
+from diagrams import Cluster, Diagram, Edge
 from diagrams.gcp.analytics import BigQuery
-from diagrams.gcp.devtools import Scheduler
 from diagrams.gcp.compute import Functions
-from diagrams.gcp.security import Iam, ResourceManager
-from diagrams.c4 import Person, Container, Database, System, SystemBoundary, Relationship
+from diagrams.gcp.devtools import Scheduler
+from diagrams.gcp.security import Iam
+from diagrams.gcp.security import ResourceManager
+from diagrams.onprem.compute import Server
 from diagrams.onprem.client import Users
+from diagrams.programming.language import Python
 
-with Diagram(direction="TB"):
+with Diagram("Cloud Alerting Architecture", show=False, direction="LR"):
     recipients = Users("Recipients")
-    mailgun = System("Mailgun Proxy")
-    DWH = BigQuery("BigQuery DWH")
-
-    with Cluster("Auxiliary components"):
-        iam = Iam("Cloud IAM")
-        secret = ResourceManager("Secret Manager")
+    mailgun_proxy = Server("Mailgun proxy")  # Use a custom icon or use generic server icon
 
 
+    with Cluster("Cloud Platform"):
+        scheduler = Scheduler("Cloud Scheduler (CRON)")
+        cloud_func = Functions("read-and-alert\nCloud Functions")
 
-    scheduler = Scheduler("Cloud Scheduler\n(CRON)")
-    function = Functions("read-and-alert\nCloud Function")
+        bq = BigQuery("Source Tables")
 
-    scheduler >> function >> Edge(label="Get query results") >> DWH
-    DWH >> Edge(label="IF results NOT NULL\nTrigger alert") >> mailgun
-    mailgun >> Edge(label="Send mail message") >> recipients
+        # Auxiliary components
+        with Cluster("Auxiliary components"):
+            iam = Iam("Cloud IAM")
+            secret = ResourceManager("Secret Manager")
 
-    # Optional: link IAM and Secret Manager to function
-    function << [iam, secret]
+    # Flow
+    scheduler >> cloud_func
+    cloud_func >> Edge(label="2a. Get query results") >> bq
+    bq >> Edge(label="1. Pre-created view") >> cloud_func
+    cloud_func >> Edge(label="2b. IF NOT NULL,\ntrigger alert") >> mailgun_proxy
+    mailgun_proxy >> Edge(label="3. Send mail message") >> recipients

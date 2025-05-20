@@ -1,10 +1,11 @@
 import functions_framework
-from google.cloud import bigquery, secretmanager
+from google.cloud import bigquery, secretmanager, storage
 import requests
 import logging
 import sys
 from jinja2 import Template
 import yaml
+import os
 
 # ──────────────
 # Logging setup
@@ -21,19 +22,27 @@ logger = logging.getLogger(__name__)
 # CONFIGURATION LOADING
 # ───────────────────────────────────────
 
-def load_alert_definitions(path="alert_definitions.yaml"):
-    """Load alert configuration from YAML."""
+def load_alert_definitions_from_gcs(bucket_name: str, blob_name: str):
+    """Load alert configuration from a YAML file in Google Cloud Storage."""
     try:
-        with open(path, "r", encoding="utf-8") as file:
-            definitions = yaml.safe_load(file)
-            logger.info("Alert definitions loaded successfully.")
-            return definitions
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(blob_name)
+
+        # Stáhne obsah souboru jako string
+        yaml_content = blob.download_as_text()
+
+        definitions = yaml.safe_load(yaml_content)
+        logger.info(f"Alert definitions loaded successfully from gs://{bucket_name}/{blob_name}.")
+        return definitions
     except Exception as e:
-        logger.exception("Failed to load alert definitions.")
+        logger.exception(f"Failed to load alert definitions from GCS bucket '{bucket_name}' blob '{blob_name}'.")
         raise
 
 
-ALERT_DEFINITIONS = load_alert_definitions()
+GCS_BUCKET_NAME = os.environ.get("GCS_BUCKET_NAME")
+GCS_BLOB_NAME = os.environ.get("GCS_BLOB_NAME")
+ALERT_DEFINITIONS = load_alert_definitions_from_gcs(GCS_BUCKET_NAME, GCS_BLOB_NAME)
 
 
 # ───────────────────────────────────────
@@ -153,13 +162,13 @@ def send_email_mailgun(subject: str, recipients: list, html_body: str):
 
 
 def send_email(
-    name: str,
-    subject: str,
-    recipients: list,
-    alert_message: str = None,
-    template_name: str = "single",
-    views: list = None,
-    link: str = None,
+        name: str,
+        subject: str,
+        recipients: list,
+        alert_message: str = None,
+        template_name: str = "single",
+        views: list = None,
+        link: str = None,
 ):
     """Prepare context and send email using Mailgun."""
     if template_name == "single":

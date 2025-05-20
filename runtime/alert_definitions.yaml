@@ -1,5 +1,5 @@
-- type: "Unpaid Invoices"
-  query: "SELECT COUNT(*) as count FROM `dataproject-458415.dwh_develop.mv_unpaid_invoices`"
+- name: "Unpaid Invoices"
+  view: "dataproject-458415.dwh_develop.mv_unpaid_invoices"
   message_template: "Found {{count}} unpaid invoices."
   link: "https://docs.google.com/spreadsheets/d/1RRNcQdD2aAUcmeMbUz0JJgrJutjiGd1ynl2XXVkNecE/edit?usp=sharing"
   recipients:
@@ -8,10 +8,9 @@
   alert_kind: "report"
   enabled: true
   threshold: 0
-  severity: "warning"
 
-- type: "High-Value Invoices"
-  query: "SELECT COUNT(*) as count FROM `dataproject-458415.dwh_develop.mv_high_value_invoices`"
+- name: "High-Value Invoices"
+  view: "dataproject-458415.dwh_develop.mv_high_value_invoices"
   message_template: "Found {{count}} invoices with value above 5000."
   link: "https://docs.google.com/spreadsheets/d/16Mvclc4aWVr-HJZaqrtDgXfwrWCv6EisSYxBdEjIS8E/edit?usp=sharing"
   recipients:
@@ -20,30 +19,25 @@
   alert_kind: "report"
   enabled: true
   threshold: 0
-  severity: "info"
 
-- type: "Unpaid Invoices2"
-  query: "SELECT COUNT(*) as count FROM `dataproject-458415.dwh_develop.mv_unpaid_invoices`"
-  message_template: "Found {{count}} unpaid invoices. 2"
+- name: "Invoices"
+  view: "dataproject-458415.dwh_develop.mv_unpaid_invoices"
+  message_template: "The system has found {{count}} invoices that are currently marked as unpaid."
   link: "https://docs.google.com/spreadsheets/d/1RRNcQdD2aAUcmeMbUz0JJgrJutjiGd1ynl2XXVkNecE/edit?usp=sharing"
   recipients:
-    - kadlec.m.90@gmail.com
     - hajek.jakub98@gmail.com
   email_subject: "Unpaid Invoices Alert2"
   alert_kind: "report"
   enabled: true
   threshold: 0
-  severity: "warning"
 
-- type: "Unpaid Invoices3"
-  query: "SELECT COUNT(*) as count FROM `dataproject-458415.dwh_develop.mv_unpaid_invoices`"
-  message_template: "Found {{count}} unpaid invoices.3"
+- name: "Invoices"
+  view: "dataproject-458415.dwh_develop.mv_unpaid_invoices"
+  message_template: "Found {{count}} unpaid invoices."
   link: "https://docs.google.com/spreadsheets/d/1RRNcQdD2aAUcmeMbUz0JJgrJutjiGd1ynl2XXVkNecE/edit?usp=sharing"
   recipients:
-    - MichalNguyen00@gmail.com
     - hajek.jakub98@gmail.com
   email_subject: "Unpaid Invoices Alert"
   alert_kind: "trigger"
   enabled: true
   threshold: 0
-  severity: "warning"

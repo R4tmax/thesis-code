@@ -2,13 +2,19 @@ import functions_framework
 from google.cloud import bigquery, secretmanager
 import requests
 import logging
+import sys
 from jinja2 import Template
 import yaml
 
 # ──────────────
 # Logging setup
 # ──────────────
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s | %(name)s | %(message)s",
+    stream=sys.stdout,
+)
+logger = logging.getLogger(__name__)
 
 
 # ───────────────────────────────────────
@@ -17,8 +23,14 @@ logging.basicConfig(level=logging.INFO)
 
 def load_alert_definitions(path="alert_definitions.yaml"):
     """Load alert configuration from YAML."""
-    with open(path, "r", encoding="utf-8") as file:
-        return yaml.safe_load(file)
+    try:
+        with open(path, "r", encoding="utf-8") as file:
+            definitions = yaml.safe_load(file)
+            logger.info("Alert definitions loaded successfully.")
+            return definitions
+    except Exception as e:
+        logger.exception("Failed to load alert definitions.")
+        raise
 
 
 ALERT_DEFINITIONS = load_alert_definitions()
@@ -35,10 +47,10 @@ def get_secret(secret_id: str) -> str:
         name = f"projects/749895389873/secrets/{secret_id}/versions/latest"
         response = client.access_secret_version(request={"name": name})
         secret = response.payload.data.decode("UTF-8")
-        logging.info(f"Secret '{secret_id}' retrieved successfully.")
+        logger.info(f"Secret '{secret_id}' retrieved successfully.")
         return secret
     except Exception:
-        logging.exception(f"Failed to retrieve secret '{secret_id}'.")
+        logger.exception(f"Failed to retrieve secret '{secret_id}'.")
         raise
 
 
@@ -46,13 +58,18 @@ def get_secret(secret_id: str) -> str:
 # BIGQUERY QUERY EXECUTION
 # ───────────────────────────────────────
 
-def run_bq_query(bq_client, query: str) -> int:
-    """Run BigQuery query and return the first count result."""
-    logging.info(f"Executing query:\n{query}")
-    result = list(bq_client.query(query).result())
-    count = getattr(result[0], "count", 0) if result else 0
-    logging.info(f"Query result count: {count}")
-    return count
+def run_bq_query(bq_client, view_name: str) -> int:
+    """Run SELECT COUNT(*) query on the given BigQuery view."""
+    try:
+        query = f"SELECT COUNT(*) as count FROM `{view_name}`"
+        logger.info(f"Executing query on view: {view_name}")
+        result = list(bq_client.query(query).result())
+        count = getattr(result[0], "count", 0) if result else 0
+        logger.info(f"Query result count for '{view_name}': {count}")
+        return count
+    except Exception:
+        logger.exception(f"Failed to execute query on view '{view_name}'")
+        raise
 
 
 # ───────────────────────────────────────
@@ -63,26 +80,29 @@ def build_alert(alert_def: dict, count: int) -> dict:
     """Build alert message and metadata from alert definition."""
     message = alert_def["message_template"].replace("{{count}}", str(count))
     return {
-        "type": alert_def["type"],
+        "name": alert_def["name"],
         "message": message,
         "link": alert_def.get("link", ""),
         "recipients": alert_def.get("recipients", []),
-        "email_subject": alert_def.get("email_subject", f"Alert: {alert_def['type']}"),
-        "alert_kind": alert_def.get("alert_kind", "trigger"),
-        "severity": alert_def.get("severity", "info"),
+        "email_subject": alert_def.get("email_subject", f"Alert: {alert_def['name']}"),
+        "alert_kind": alert_def.get("alert_kind", "trigger")
     }
 
 
-def process_alert_definitions(bq_client, report_type: str) -> list:
-    """Filter and evaluate alerts based on report_type."""
+def process_alert_definitions(bq_client, alert_type: str) -> list:
+    """Filter and evaluate alerts based on alert_type."""
     alerts = []
     for alert_def in ALERT_DEFINITIONS:
         if not alert_def.get("enabled", True):
             continue
-        if alert_def.get("alert_kind", "trigger") == report_type:
-            count = run_bq_query(bq_client, alert_def["query"])
-            if count > alert_def.get("threshold", 0):
-                alerts.append(build_alert(alert_def, count))
+        if alert_def.get("alert_kind", "trigger") == alert_type:
+            try:
+                count = run_bq_query(bq_client, alert_def["view"])
+                if count > alert_def.get("threshold", 0):
+                    logger.info(f"Alert '{alert_def['name']}' triggered with count {count}.")
+                    alerts.append(build_alert(alert_def, count))
+            except Exception:
+                logger.warning(f"Skipping alert '{alert_def['name']}' due to query failure.")
     return alerts
 
 
@@ -100,9 +120,13 @@ def render_email_template(template_name: str, context: dict) -> str:
     """Render email HTML from template and context."""
     if template_name not in TEMPLATE_PATHS:
         raise ValueError(f"Unknown template_name '{template_name}'")
-    with open(TEMPLATE_PATHS[template_name], "r", encoding="utf-8") as f:
-        template = Template(f.read())
-    return template.render(**context)
+    try:
+        with open(TEMPLATE_PATHS[template_name], "r", encoding="utf-8") as f:
+            template = Template(f.read())
+        return template.render(**context)
+    except Exception:
+        logger.exception(f"Failed to render template '{template_name}'")
+        raise
 
 
 def send_email_mailgun(subject: str, recipients: list, html_body: str):
@@ -111,22 +135,25 @@ def send_email_mailgun(subject: str, recipients: list, html_body: str):
     MAILGUN_DOMAIN = get_secret("mailgun_domain")
 
     for recipient in recipients:
-        response = requests.post(
-            f"https://api.eu.mailgun.net/v3/{MAILGUN_DOMAIN}/messages",
-            auth=("api", MAILGUN_API),
-            data={
-                "from": f"Alert System <alert@{MAILGUN_DOMAIN}>",
-                "to": recipient,
-                "subject": subject,
-                "html": html_body,
-            },
-        )
-        response.raise_for_status()
-        logging.info(f"Email sent to {recipient}")
+        try:
+            response = requests.post(
+                f"https://api.eu.mailgun.net/v3/{MAILGUN_DOMAIN}/messages",
+                auth=("api", MAILGUN_API),
+                data={
+                    "from": f"Alert System <alert@{MAILGUN_DOMAIN}>",
+                    "to": recipient,
+                    "subject": subject,
+                    "html": html_body,
+                },
+            )
+            response.raise_for_status()
+            logger.info(f"Email sent to {recipient}")
+        except Exception:
+            logger.exception(f"Failed to send email to {recipient}")
 
 
 def send_email(
-    alert_type: str,
+    name: str,
     subject: str,
     recipients: list,
     alert_message: str = None,
@@ -137,14 +164,14 @@ def send_email(
     """Prepare context and send email using Mailgun."""
     if template_name == "single":
         context = {
-            "alert_type": alert_type,
+            "name": name,
             "alert_message": alert_message,
             "subject": subject,
             "link": link or "#",
         }
     elif template_name == "report":
         context = {
-            "alert_type": alert_type,
+            "name": name,
             "subject": subject,
             "views": views or [],
         }
@@ -162,10 +189,10 @@ def send_email(
 def send_trigger_alerts(alerts: list):
     """Send immediate emails for each triggered alert."""
     for alert in alerts:
-        logging.info(f"Sending trigger alert email: {alert['type']}")
+        logger.info(f"Sending trigger alert email: {alert['name']}")
         send_email(
             alert_message=alert["message"],
-            alert_type=alert["type"],
+            name=alert["name"],
             subject=alert["email_subject"],
             recipients=alert["recipients"],
             template_name="single",
@@ -176,7 +203,7 @@ def send_trigger_alerts(alerts: list):
 def build_report_message(alerts: list) -> dict:
     """Build aggregated alert views for report email template."""
     views = [
-        {"alert_type": a["type"], "alert_message": a["message"], "link": a["link"]}
+        {"name": a["name"], "alert_message": a["message"], "link": a["link"]}
         for a in alerts
     ]
     return {"views": views}
@@ -191,10 +218,10 @@ def send_alert_report(report_alerts: list):
 
     for recipient, alerts in alerts_by_recipient.items():
         report_context = build_report_message(alerts)
-        logging.info(f"Sending report email to {recipient} with {len(alerts)} alerts.")
+        logger.info(f"Sending report email to {recipient} with {len(alerts)} alerts.")
         send_email(
-            alert_type="Summary Report",
-            subject="Summary Report",
+            name="Summary Report",
+            subject="Summary Report Behavio",
             recipients=[recipient],
             template_name="report",
             views=report_context["views"],
@@ -209,7 +236,7 @@ def send_alert_report(report_alerts: list):
 def read_and_alert(request):
     """Cloud Function entry point."""
     try:
-        logging.info("Starting alert check process")
+        logger.info("Starting alert check process")
         bq_client = bigquery.Client()
 
         data = request.get_json(force=True) or {}
@@ -222,11 +249,11 @@ def read_and_alert(request):
         elif report_type == "trigger":
             send_trigger_alerts(alerts)
         else:
-            logging.warning(f"Unknown report_type '{report_type}', no alerts sent.")
+            logger.warning(f"Unknown report_type '{report_type}', no alerts sent.")
 
-        logging.info("Alert check process completed successfully.")
+        logger.info("Alert check process completed successfully.")
         return "Alert check completed.", 200
 
     except Exception as e:
-        logging.exception("Error during alert check process")
+        logger.exception("Error during alert check process")
         return f"Error occurred: {e}", 500

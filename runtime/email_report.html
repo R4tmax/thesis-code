@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Monthly Report</title>
@@ -9,30 +9,36 @@
 
     <div style="max-width: 700px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
         <div style="margin-bottom: 30px; text-align: center;">
-            <img src="https://i.ibb.co/q3Y484t3/behavio7.png" alt="Logo" style="max-width: 300px; width: 100%; height: auto">
+            <img
+                src="https://i.ibb.co/q3Y484t3/behavio7.png"
+                alt="Company Logo"
+                style="max-width: 300px; width: 100%; height: auto"
+            >
         </div>
-        <!-- Hlavička -->
-        <h2 style="color: #ffffff; font-size: 24px; margin: 0 0 20px 0; padding: 20px; border-radius: 6px; background-color: #0C66EE;">{{alert_type}}</h2>
+        <!-- Header -->
+        <h2 style="color: #ffffff; font-size: 24px; margin: 0 0 20px 0; padding: 20px; border-radius: 6px; background-color: #0C66EE;">{{name}}</h2>
         <p style="color: #555; font-size: 16px; margin-bottom: 30px; line-height: 1.6;">
-            Vyberte si, kterou část reportu si chcete zobrazit.
+            Choose which part of the report you want to view.
         </p>
 
-        <!-- Bloky upozornění -->
+        <!-- Alert blocks -->
         {% for view in views %}
             <div style="background-color: #f1f3f5; padding: 20px; border-radius: 6px; margin-bottom: 25px;">
-                <h3 style="color: #222; font-size: 18px; margin: 0 0 10px;">{{ view.alert_type }}</h3>
+                <h3 style="color: #222; font-size: 18px; margin: 0 0 10px;">{{ view.name }}</h3>
                 <p style="color: #555; font-size: 15px; line-height: 1.6; margin: 0 0 10px;">{{ view.alert_message }}</p>
                 <div style="text-align: right; margin-top: 10px;">
                     <a href="{{ view.link }}" style="display: inline-block; background-color: #28a745; color: #ffffff; padding: 10px 18px; font-size: 14px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-                        🔍 Zobrazit
+                        🔍 View
                     </a>
                 </div>
             </div>
         {% endfor %}
 
-        <!-- Patička -->
+        <!-- Footer -->
         <p style="font-size: 12px; color: #aaa; margin-top: 50px; text-align: center;">
-            Tento e-mail byl vygenerován automaticky systémem pro alerty.
+            This email was generated automatically by the alert system.<br>
+            Need help? Contact us at
+            <a href="mailto:email.alerttestbot@gmail.com" style="color: #888; text-decoration: underline;">email.alerttestbot@gmail.com</a>.
         </p>
 
     </div>

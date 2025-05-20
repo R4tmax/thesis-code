@@ -6,6 +6,7 @@ import sys
 from jinja2 import Template
 import yaml
 import os
+import re
 
 # ──────────────
 # Logging setup
@@ -22,27 +23,118 @@ logger = logging.getLogger(__name__)
 # CONFIGURATION LOADING
 # ───────────────────────────────────────
 
-def load_alert_definitions_from_gcs(bucket_name: str, blob_name: str):
-    """Load alert configuration from a YAML file in Google Cloud Storage."""
+def is_valid_alert_definition(alert_def: dict, bq_client: bigquery.Client) -> bool:
+    """Validate alert definition for structure, types, email format, and view existence."""
+    required_keys = [
+        "name", "view", "message_template", "recipients", "email_subject",
+        "alert_kind", "link", "enabled", "threshold"
+    ]
+
+    for key in required_keys:
+        if key not in alert_def:
+            logger.warning(f"Validation failed for alert (missing '{key}'): {alert_def.get('name', 'UNKNOWN_ALERT_NAME')}")
+            return False
+
+    if not isinstance(alert_def["name"], str):
+        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'name' must be a string.")
+        return False
+    if not isinstance(alert_def["view"], str):
+        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'view' must be a string.")
+        return False
+    if not isinstance(alert_def["message_template"], str):
+        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'message_template' must be a string.")
+        return False
+    if not isinstance(alert_def["recipients"], list):
+        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'recipients' must be a list.")
+        return False
+    if not isinstance(alert_def["email_subject"], str):
+        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'email_subject' must be a string.")
+        return False
+    if not isinstance(alert_def["alert_kind"], str) or alert_def["alert_kind"] not in ["report", "trigger"]:
+        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'alert_kind' must be 'report' or 'trigger'.")
+        return False
+    if not isinstance(alert_def["link"], str):
+        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'link' must be a string.")
+        return False
+    if not isinstance(alert_def["enabled"], bool):
+        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'enabled' must be a boolean.")
+        return False
+    if not isinstance(alert_def["threshold"], (int, float)):
+        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'threshold' must be a number.")
+        return False
+
+    if not check_view_exists(bq_client, alert_def["view"]):
+        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'view' does not exist: {alert_def['view']}.")
+        return False
+
+    if not all(is_valid_email(recipient) for recipient in alert_def["recipients"]):
+        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'recipients' contains invalid email addresses.")
+        return False
+
+    if "link" in alert_def and not is_valid_url(alert_def["link"]):
+        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'link' is not a valid URL.")
+        return False
+
+    return True
+
+def is_valid_email(email: str) -> bool:
+    """Check if the given string is a valid email address."""
+    pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    return bool(re.match(pattern, email))
+
+def is_valid_url(url: str) -> bool:
+    """Check if the given string is a valid HTTP or HTTPS URL."""
+    pattern = r"^(https?://)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/[a-zA-Z0-9/?=&\-._]*)?$"
+    return bool(re.match(pattern, url))
+
+def check_view_exists(bq_client: bigquery.Client, view_name: str) -> bool:
+    """Check if a BigQuery view exists."""
+    try:
+        bq_client.get_table(view_name)
+        return True
+    except Exception as e:
+        if hasattr(e, "code") and e.code == 404:
+            return False
+        logger.warning(f"Error checking view existence: {e}")
+        return False
+
+def load_alert_definitions_from_gcs(bucket_name: str, blob_name: str, bq_client: bigquery.Client) -> list:
+    """Load and validate alert definitions from a YAML file stored in GCS."""
+    valid_definitions = []
     try:
         storage_client = storage.Client()
         bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(blob_name)
 
-        # Stáhne obsah souboru jako string
         yaml_content = blob.download_as_text()
+        raw_definitions = yaml.safe_load(yaml_content)
 
-        definitions = yaml.safe_load(yaml_content)
-        logger.info(f"Alert definitions loaded successfully from gs://{bucket_name}/{blob_name}.")
-        return definitions
+        if not isinstance(raw_definitions, list):
+            logger.error("Root of the YAML file is not a list. Expected a list of alert definitions.")
+            return []
+
+        for i, alert_def in enumerate(raw_definitions):
+            if isinstance(alert_def, dict):
+                if is_valid_alert_definition(alert_def, bq_client):
+                    valid_definitions.append(alert_def)
+                else:
+                    logger.warning(f"Skipping invalid alert definition at index {i} in GCS blob '{blob_name}'.")
+            else:
+                logger.warning(f"Skipping malformed item at index {i} in GCS blob '{blob_name}'. Expected a dictionary.")
+
+        logger.info(f"Successfully loaded {len(valid_definitions)} valid alert definitions from gs://{bucket_name}/{blob_name}.")
+
+        if len(raw_definitions) > len(valid_definitions):
+            logger.warning(f"{len(raw_definitions) - len(valid_definitions)} alert definitions were skipped due to validation errors.")
+
+        return valid_definitions
+
+    except yaml.YAMLError as e:
+        logger.exception(f"Failed to parse YAML content from GCS blob '{blob_name}'. Check YAML syntax.")
+        return []
     except Exception as e:
-        logger.exception(f"Failed to load alert definitions from GCS bucket '{bucket_name}' blob '{blob_name}'.")
+        logger.exception(f"Failed to load or process alert definitions from GCS bucket '{bucket_name}' blob '{blob_name}'.")
         raise
-
-
-GCS_BUCKET_NAME = os.environ.get("GCS_BUCKET_NAME")
-GCS_BLOB_NAME = os.environ.get("GCS_BLOB_NAME")
-ALERT_DEFINITIONS = load_alert_definitions_from_gcs(GCS_BUCKET_NAME, GCS_BLOB_NAME)
 
 
 # ───────────────────────────────────────
@@ -98,10 +190,10 @@ def build_alert(alert_def: dict, count: int) -> dict:
     }
 
 
-def process_alert_definitions(bq_client, alert_type: str) -> list:
+def process_alert_definitions(alert_definitions,bq_client, alert_type: str) -> list:
     """Filter and evaluate alerts based on alert_type."""
     alerts = []
-    for alert_def in ALERT_DEFINITIONS:
+    for alert_def in alert_definitions:
         if not alert_def.get("enabled", True):
             continue
         if alert_def.get("alert_kind", "trigger") == alert_type:
@@ -251,7 +343,14 @@ def read_and_alert(request):
         data = request.get_json(force=True) or {}
         report_type = data.get("report_type", "trigger")
 
-        alerts = process_alert_definitions(bq_client, report_type)
+        gcs_bucket_name = os.environ.get("GCS_BUCKET_NAME")
+        gcs_blob_name = os.environ.get("GCS_BLOB_NAME")
+        alert_definitions = load_alert_definitions_from_gcs(gcs_bucket_name, gcs_blob_name, bq_client)
+        if not alert_definitions:
+            logger.error("No valid alert definitions loaded. Exiting.")
+            return "No valid alert definitions loaded.", 500
+
+        alerts = process_alert_definitions(alert_definitions, bq_client, report_type)
 
         if report_type == "report":
             send_alert_report(alerts)

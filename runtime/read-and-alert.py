@@ -8,6 +8,7 @@ import yaml
 import os
 import re
 
+
 # ──────────────
 # Logging setup
 # ──────────────
@@ -20,47 +21,94 @@ logger = logging.getLogger(__name__)
 
 
 # ───────────────────────────────────────
+# SECRET MANAGER UTILITIES
+# ───────────────────────────────────────
+
+def get_secret(secret_id: str) -> str:
+    """Retrieve secret from Google Secret Manager."""
+    try:
+        client = secretmanager.SecretManagerServiceClient()
+        name = f"projects/749895389873/secrets/{secret_id}/versions/latest"
+        response = client.access_secret_version(request={"name": name})
+        secret = response.payload.data.decode("UTF-8")
+        logger.info(f"Secret '{secret_id}' retrieved successfully.")
+        return secret
+    except Exception:
+        logger.exception(f"Failed to retrieve secret '{secret_id}'.")
+        raise
+
+
+# ───────────────────────────────────────
 # CONFIGURATION LOADING
 # ───────────────────────────────────────
 
-def is_valid_alert_definition(alert_def: dict, bq_client: bigquery.Client) -> bool:
-    """Validate alert definition for structure, types, email format, and view existence."""
+def is_valid_email(email: str) -> bool:
+    """Check if the given string is a valid email address."""
+    pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    return bool(re.match(pattern, email))
+
+
+def is_valid_url(url: str) -> bool:
+    """Check if the given string is a valid HTTP or HTTPS URL."""
+    pattern = r"^(https?://)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/[a-zA-Z0-9/?=&\-._]*)?$"
+    return bool(re.match(pattern, url))
+
+
+def check_view_exists(bq_client: bigquery.Client, view_name: str) -> bool:
+    """Check if a BigQuery view exists."""
+    try:
+        bq_client.get_table(view_name)
+        return True
+    except Exception as e:
+        if hasattr(e, "code") and e.code == 404:
+            return False
+        logger.warning(f"Error checking view existence: {e}")
+        return False
+
+
+def has_all_required_keys(alert_def: dict) -> bool:
+    """Check presence of all required keys in alert definition."""
     required_keys = [
         "name", "view", "message_template", "recipients", "email_subject",
         "alert_kind", "link", "enabled", "threshold"
     ]
-
     for key in required_keys:
         if key not in alert_def:
             logger.warning(f"Validation failed for alert (missing '{key}'): {alert_def.get('name', 'UNKNOWN_ALERT_NAME')}")
             return False
+    return True
 
-    if not isinstance(alert_def["name"], str):
-        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'name' must be a string.")
+
+def has_valid_types(alert_def: dict) -> bool:
+    """Validate types and value constraints of alert definition fields."""
+    name = alert_def.get("name", "UNKNOWN_ALERT_NAME")
+
+    checks = [
+        (isinstance(alert_def["name"], str), "'name' must be a string."),
+        (isinstance(alert_def["view"], str), "'view' must be a string."),
+        (isinstance(alert_def["message_template"], str), "'message_template' must be a string."),
+        (isinstance(alert_def["recipients"], list), "'recipients' must be a list."),
+        (isinstance(alert_def["email_subject"], str), "'email_subject' must be a string."),
+        (isinstance(alert_def["alert_kind"], str) and alert_def["alert_kind"] in ["report", "trigger"],
+            "'alert_kind' must be 'report' or 'trigger'."),
+        (isinstance(alert_def["link"], str), "'link' must be a string."),
+        (isinstance(alert_def["enabled"], bool), "'enabled' must be a boolean."),
+        (isinstance(alert_def["threshold"], (int, float)), "'threshold' must be a number."),
+    ]
+
+    for valid, error in checks:
+        if not valid:
+            logger.warning(f"Validation failed for alert '{name}': {error}")
+            return False
+    return True
+
+
+def is_valid_alert_definition(alert_def: dict, bq_client: bigquery.Client) -> bool:
+    """Validate alert definition for structure, types, email format, and view existence."""
+    if not has_all_required_keys(alert_def):
         return False
-    if not isinstance(alert_def["view"], str):
-        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'view' must be a string.")
-        return False
-    if not isinstance(alert_def["message_template"], str):
-        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'message_template' must be a string.")
-        return False
-    if not isinstance(alert_def["recipients"], list):
-        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'recipients' must be a list.")
-        return False
-    if not isinstance(alert_def["email_subject"], str):
-        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'email_subject' must be a string.")
-        return False
-    if not isinstance(alert_def["alert_kind"], str) or alert_def["alert_kind"] not in ["report", "trigger"]:
-        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'alert_kind' must be 'report' or 'trigger'.")
-        return False
-    if not isinstance(alert_def["link"], str):
-        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'link' must be a string.")
-        return False
-    if not isinstance(alert_def["enabled"], bool):
-        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'enabled' must be a boolean.")
-        return False
-    if not isinstance(alert_def["threshold"], (int, float)):
-        logger.warning(f"Validation failed for alert '{alert_def['name']}': 'threshold' must be a number.")
+
+    if not has_valid_types(alert_def):
         return False
 
     if not check_view_exists(bq_client, alert_def["view"]):
@@ -77,26 +125,6 @@ def is_valid_alert_definition(alert_def: dict, bq_client: bigquery.Client) -> bo
 
     return True
 
-def is_valid_email(email: str) -> bool:
-    """Check if the given string is a valid email address."""
-    pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-    return bool(re.match(pattern, email))
-
-def is_valid_url(url: str) -> bool:
-    """Check if the given string is a valid HTTP or HTTPS URL."""
-    pattern = r"^(https?://)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/[a-zA-Z0-9/?=&\-._]*)?$"
-    return bool(re.match(pattern, url))
-
-def check_view_exists(bq_client: bigquery.Client, view_name: str) -> bool:
-    """Check if a BigQuery view exists."""
-    try:
-        bq_client.get_table(view_name)
-        return True
-    except Exception as e:
-        if hasattr(e, "code") and e.code == 404:
-            return False
-        logger.warning(f"Error checking view existence: {e}")
-        return False
 
 def load_alert_definitions_from_gcs(bucket_name: str, blob_name: str, bq_client: bigquery.Client) -> list:
     """Load and validate alert definitions from a YAML file stored in GCS."""
@@ -134,24 +162,6 @@ def load_alert_definitions_from_gcs(bucket_name: str, blob_name: str, bq_client:
         return []
     except Exception as e:
         logger.exception(f"Failed to load or process alert definitions from GCS bucket '{bucket_name}' blob '{blob_name}'.")
-        raise
-
-
-# ───────────────────────────────────────
-# SECRET MANAGER UTILITIES
-# ───────────────────────────────────────
-
-def get_secret(secret_id: str) -> str:
-    """Retrieve secret from Google Secret Manager."""
-    try:
-        client = secretmanager.SecretManagerServiceClient()
-        name = f"projects/749895389873/secrets/{secret_id}/versions/latest"
-        response = client.access_secret_version(request={"name": name})
-        secret = response.payload.data.decode("UTF-8")
-        logger.info(f"Secret '{secret_id}' retrieved successfully.")
-        return secret
-    except Exception:
-        logger.exception(f"Failed to retrieve secret '{secret_id}'.")
         raise
 
 
@@ -211,18 +221,18 @@ def process_alert_definitions(alert_definitions,bq_client, alert_type: str) -> l
 # EMAIL TEMPLATES AND SENDING
 # ───────────────────────────────────────
 
-TEMPLATE_PATHS = {
-    "single": "email_trigger.html",
-    "report": "email_report.html",
-}
-
 
 def render_email_template(template_name: str, context: dict) -> str:
     """Render email HTML from template and context."""
-    if template_name not in TEMPLATE_PATHS:
+    template_paths = {
+    "single": "email_trigger.html",
+    "report": "email_report.html",
+    }
+
+    if template_name not in template_paths:
         raise ValueError(f"Unknown template_name '{template_name}'")
     try:
-        with open(TEMPLATE_PATHS[template_name], "r", encoding="utf-8") as f:
+        with open(template_paths[template_name], "r", encoding="utf-8") as f:
             template = Template(f.read())
         return template.render(**context)
     except Exception:

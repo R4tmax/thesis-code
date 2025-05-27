@@ -1,12 +1,15 @@
-import functions_framework
-from google.cloud import bigquery, secretmanager, storage
-import requests
-import logging
-import sys
-from jinja2 import Template
-import yaml
 import os
 import re
+import sys
+import logging
+import yaml
+import requests
+from jinja2 import Template
+import google.auth
+from google.cloud import bigquery
+from google.cloud import storage
+from google.cloud import secretmanager
+import functions_framework
 
 
 # ──────────────
@@ -28,7 +31,8 @@ def get_secret(secret_id: str) -> str:
     """Retrieve secret from Google Secret Manager."""
     try:
         client = secretmanager.SecretManagerServiceClient()
-        name = f"projects/749895389873/secrets/{secret_id}/versions/latest"
+        project_id = os.environ.get("PROJECT_ID")
+        name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
         response = client.access_secret_version(request={"name": name})
         secret = response.payload.data.decode("UTF-8")
         logger.info(f"Secret '{secret_id}' retrieved successfully.")
@@ -69,7 +73,7 @@ def check_view_exists(bq_client: bigquery.Client, view_name: str) -> bool:
 def has_all_required_keys(alert_def: dict) -> bool:
     """Check presence of all required keys in alert definition."""
     required_keys = [
-        "name", "view", "message_template", "recipients", "email_subject",
+        "name", "view", "message_template", "recipients",
         "alert_kind", "link", "enabled", "threshold"
     ]
     for key in required_keys:
@@ -88,7 +92,6 @@ def has_valid_types(alert_def: dict) -> bool:
         (isinstance(alert_def["view"], str), "'view' must be a string."),
         (isinstance(alert_def["message_template"], str), "'message_template' must be a string."),
         (isinstance(alert_def["recipients"], list), "'recipients' must be a list."),
-        (isinstance(alert_def["email_subject"], str), "'email_subject' must be a string."),
         (isinstance(alert_def["alert_kind"], str) and alert_def["alert_kind"] in ["report", "trigger"],
             "'alert_kind' must be 'report' or 'trigger'."),
         (isinstance(alert_def["link"], str), "'link' must be a string."),
@@ -126,11 +129,13 @@ def is_valid_alert_definition(alert_def: dict, bq_client: bigquery.Client) -> bo
     return True
 
 
-def load_alert_definitions_from_gcs(bucket_name: str, blob_name: str, bq_client: bigquery.Client) -> list:
+def load_alert_definitions_from_gcs(bq_client: bigquery.Client) -> list:
     """Load and validate alert definitions from a YAML file stored in GCS."""
     valid_definitions = []
     try:
         storage_client = storage.Client()
+        bucket_name = os.environ.get("GCS_BUCKET_NAME")
+        blob_name = os.environ.get("GCS_BLOB_NAME")
         bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(blob_name)
 
@@ -193,10 +198,9 @@ def build_alert(alert_def: dict, count: int) -> dict:
     return {
         "name": alert_def["name"],
         "message": message,
-        "link": alert_def.get("link", ""),
-        "recipients": alert_def.get("recipients", []),
-        "email_subject": alert_def.get("email_subject", f"Alert: {alert_def['name']}"),
-        "alert_kind": alert_def.get("alert_kind", "trigger")
+        "link": alert_def.get("link"),
+        "recipients": alert_def.get("recipients"),
+        "alert_kind": alert_def.get("alert_kind")
     }
 
 
@@ -206,10 +210,10 @@ def process_alert_definitions(alert_definitions,bq_client, alert_type: str) -> l
     for alert_def in alert_definitions:
         if not alert_def.get("enabled", True):
             continue
-        if alert_def.get("alert_kind", "trigger") == alert_type:
+        if alert_def.get("alert_kind") == alert_type:
             try:
                 count = run_bq_query(bq_client, alert_def["view"])
-                if count > alert_def.get("threshold", 0):
+                if count > alert_def.get("threshold"):
                     logger.info(f"Alert '{alert_def['name']}' triggered with count {count}.")
                     alerts.append(build_alert(alert_def, count))
             except Exception:
@@ -225,7 +229,7 @@ def process_alert_definitions(alert_definitions,bq_client, alert_type: str) -> l
 def render_email_template(template_name: str, context: dict) -> str:
     """Render email HTML from template and context."""
     template_paths = {
-    "single": "email_trigger.html",
+    "trigger": "email_trigger.html",
     "report": "email_report.html",
     }
 
@@ -264,26 +268,24 @@ def send_email_mailgun(subject: str, recipients: list, html_body: str):
 
 
 def send_email(
-        name: str,
         subject: str,
+        name: str,
         recipients: list,
+        template_name: str,
         alert_message: str = None,
-        template_name: str = "single",
         views: list = None,
         link: str = None,
 ):
     """Prepare context and send email using Mailgun."""
-    if template_name == "single":
+    if template_name == "trigger":
         context = {
             "name": name,
             "alert_message": alert_message,
-            "subject": subject,
-            "link": link or "#",
+            "link": link,
         }
     elif template_name == "report":
         context = {
             "name": name,
-            "subject": subject,
             "views": views or [],
         }
     else:
@@ -302,11 +304,11 @@ def send_trigger_alerts(alerts: list):
     for alert in alerts:
         logger.info(f"Sending trigger alert email: {alert['name']}")
         send_email(
-            alert_message=alert["message"],
+            subject = f"Alert: {alert['name']}",
             name=alert["name"],
-            subject=alert["email_subject"],
+            alert_message=alert["message"],
             recipients=alert["recipients"],
-            template_name="single",
+            template_name="trigger",
             link=alert["link"],
         )
 
@@ -331,8 +333,8 @@ def send_alert_report(report_alerts: list):
         report_context = build_report_message(alerts)
         logger.info(f"Sending report email to {recipient} with {len(alerts)} alerts.")
         send_email(
-            name="Summary Report",
-            subject="Summary Report Behavio",
+            subject = "Behavio Monthly Report",
+            name = "Monthly report",
             recipients=[recipient],
             template_name="report",
             views=report_context["views"],
@@ -348,14 +350,13 @@ def read_and_alert(request):
     """Cloud Function entry point."""
     try:
         logger.info("Starting alert check process")
-        bq_client = bigquery.Client()
+        credentials, project = google.auth.default(scopes=["https://www.googleapis.com/auth/drive","https://www.googleapis.com/auth/bigquery"])
+        bq_client = bigquery.Client(credentials=credentials, project=project)
 
         data = request.get_json(force=True) or {}
         report_type = data.get("report_type", "trigger")
 
-        gcs_bucket_name = os.environ.get("GCS_BUCKET_NAME")
-        gcs_blob_name = os.environ.get("GCS_BLOB_NAME")
-        alert_definitions = load_alert_definitions_from_gcs(gcs_bucket_name, gcs_blob_name, bq_client)
+        alert_definitions = load_alert_definitions_from_gcs(bq_client)
         if not alert_definitions:
             logger.error("No valid alert definitions loaded. Exiting.")
             return "No valid alert definitions loaded.", 500

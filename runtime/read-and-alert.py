@@ -7,6 +7,7 @@ from jinja2 import Template
 import yaml
 import os
 import re
+import google.auth
 
 
 # ──────────────
@@ -28,7 +29,8 @@ def get_secret(secret_id: str) -> str:
     """Retrieve secret from Google Secret Manager."""
     try:
         client = secretmanager.SecretManagerServiceClient()
-        name = f"projects/749895389873/secrets/{secret_id}/versions/latest"
+        project_id = os.environ.get("PROJECT_ID")
+        name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
         response = client.access_secret_version(request={"name": name})
         secret = response.payload.data.decode("UTF-8")
         logger.info(f"Secret '{secret_id}' retrieved successfully.")
@@ -348,7 +350,8 @@ def read_and_alert(request):
     """Cloud Function entry point."""
     try:
         logger.info("Starting alert check process")
-        bq_client = bigquery.Client()
+        credentials, project = google.auth.default(scopes=["https://www.googleapis.com/auth/drive","https://www.googleapis.com/auth/bigquery"])
+        bq_client = bigquery.Client(credentials=credentials, project=project)
 
         data = request.get_json(force=True) or {}
         report_type = data.get("report_type", "trigger")

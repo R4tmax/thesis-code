@@ -13,7 +13,7 @@ def send_email_gmail(subject: str, recipients: list, html_body: str):
         client_id = get_secret("Gmail_client_id")
         client_secret = get_secret("Gmail_client_secret")
         refresh_token = get_secret("Gmail_refresh_token")
-        sender_email = "email.alerttestbot@gmail.com"
+        sender_email = get_secret("Gmail_email_sender")
 
         creds = Credentials(
             None,

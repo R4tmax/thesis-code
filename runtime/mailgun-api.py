@@ -1,3 +1,5 @@
+import requests
+
 def send_email_mailgun(subject: str, recipients: list, html_body: str):
     """Send email via Mailgun API to multiple recipients."""
     MAILGUN_API = get_secret("mailgun_api")

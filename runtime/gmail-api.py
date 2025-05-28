@@ -1,4 +1,10 @@
-def send_email(subject: str, recipients: list, html_body: str):
+import base64
+from email.mime.text import MIMEText
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+
+def send_email_gmail(subject: str, recipients: list, html_body: str):
     """
     Send an email using Gmail API with an HTML message body.
     Gmail API credentials are loaded from Secret Manager.

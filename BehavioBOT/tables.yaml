@@ -1,0 +1,40 @@
+tables:
+  - name: test_dwh.invoices_act_nonman
+    description: Tabulka obsahuje všechny vystavené faktury, jejich částky, splatnosti a stav zaplacení. Faktury jsou vystavené pro naše klienty.
+    schema: |
+      | InvoiceType              | STRING   | Typ faktury ("FAKTURA", "FA_ODD")                       |
+      | InvoiceDate              | DATE     | Datum vystavení faktury ve formátu YYYY-MM-DD             |
+      | DueDate                  | DATE     | Datum splatnosti faktury ve formátu YYYY-MM-DD            |
+      | TaxableSupplyDate        | DATE     | Datum zdanitelného plnění ve formátu YYYY-MM-DD           |
+      | TotalBaseAmountCZK       | NUMERIC  | Základ v CZK                                            |
+      | ClientID                 | STRING/ARRAY   | Identifikátor klienta                                   |
+      | ProjectID                | STRING/ARRAY   | Identifikátor projektu                                  |
+      | CustomerName             | STRING   | Jméno zákazníka                                         |
+      | CustomerIDAlt            | STRING/ARRAY   | Alternativní identifikátor zákazníka                    |
+      | TotalAmountCZK           | NUMERIC  | Celková částka v CZK                                    |
+      | PaymentStatus            | STRING   | Stav platby (“Uhrazeno”, “Částečně uhrazeno”, null)     |
+      | RemainingAmountCZK       | NUMERIC  | Zbývající částka k úhradě v CZK                         |
+      | PaymentDate              | DATE     | Datum úhrady faktury                                    |
+      | TotalWithoutAdvancesCZK  | NUMERIC  | Celkem bez záloh v CZK                                  |
+      | TotalVATAmountCZK        | NUMERIC  | Celková částka DPH v CZK                                |
+      | OrderNumber              | STRING   | Číslo objednávky                                        |
+      | Description              | STRING   | Popis faktury                                           |
+      | Currency                 | STRING   | Měna (“CZK”, “USD”, "EUR", "BGN")                       |
+      | ExchangeRate             | NUMERIC  | Použitý kurz k CZK                                      |
+      | TotalAmountCurrency      | NUMERIC  | Celková částka v původní měně                           |
+      | PaymentMethod            | STRING   | Způsob platby (PREVOD)                                  |
+
+  - name: test_dwh.projects_act
+    description: Tabulka obsahuje informace o jednotlivých projektech, klientech, produktech, jejich hodnotě a termínech realizace. Pro klienty jsou u nás vytvářené projekty, za které platí.
+    schema: |
+      | ProjectID     | STRING/ARRAY   | Unikátní identifikátor projektu                        |
+      | ClientID      | STRING   | Unikátní identifikátor klienta                         |
+      | Client        | STRING   | Název klienta                                          |
+      | ico           | STRING   | IČO klienta                                            |
+      | Product       | STRING   | Název produktu nebo služby ("single test PRO", "BT Enterprise", "BT PRO", "BT PRO Lite", "AP", "BT Starter Lite", "BT Starter", "LS", "BA", "yearly plan PRO", "AS", "yearly plan PRO 2", "AIT", "post-test", "MTS")                             |
+      | CZKValue      | NUMERIC  | Hodnota projektu v CZK                                 |
+      | BookingDate   | STRING   | Datum objednávky ve formmátu DD.MM.YYYY                |
+      | Renewal       | BOOLEAN  | Indikace, zda jde o obnovení smlouvy ("false"/"true",null)|
+      | Start         | DATE     | Datum začátku projektu ve formátu YYYY-MM-DD                 |
+      | End           | DATE     | Datum ukončení projektu ve formátu YYYY-MM-DD                | 
+      | ARR           | STRING   | Annual Recurring Revenue ("yes", null)     |

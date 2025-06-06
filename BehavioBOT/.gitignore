@@ -1,0 +1,23 @@
+# Prostředí a cache
+__pycache__/
+*.pyc
+
+# Citlivé údaje a přihlašovací údaje
+.env
+credentials/
+*.json
+
+# Streamlit/Cloud/IDE specifické
+.streamlit/secrets.toml
+.gcloudignore
+.vscode/
+.idea/
+*.DS_Store
+
+# Docker build soubory
+*.log
+
+# Jupyter outputs
+.ipynb_checkpoints/
+
+

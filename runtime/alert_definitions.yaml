@@ -1,43 +1,50 @@
-- name: "Unpaid Invoices"
-  view: "dataproject-458415.dwh_develop.mv_unpaid_invoices"
-  message_template: "Found {{count}} unpaid invoices."
-  link: "https://docs.google.com/spreadsheets/d/1RRNcQdD2aAUcmeMbUz0JJgrJutjiGd1ynl2XXVkNecE/edit?usp=sharing"
+- name: "Projects Approaching End"
+  view: "behavio-bi-sp.test_dwh.view_alert_projects_ending_soon"
+  message_template: "There are currently {{count}} projects with planned completion within the next 30 days."
+  link: "https://docs.google.com/spreadsheets/d/1uxTX1bx6N_oV8-xCigXRhJYh1-CESsze3LozVbSWK3Y/edit?usp=sharing"
   recipients:
-    - hajek.jakub98@gmail.com
-  email_subject: "Unpaid Invoices Alert"
-  alert_kind: "report"
-  enabled: true
-  threshold: 0
-
-- name: "High-Value Invoices"
-  view: "dataproject-458415.dwh_develop.mv_high_value_invoices"
-  message_template: "Found {{count}} invoices with value above 5000."
-  link: "https://docs.google.com/spreadsheets/d/16Mvclc4aWVr-HJZaqrtDgXfwrWCv6EisSYxBdEjIS8E/edit?usp=sharing"
-  recipients:
-    - hajek.jakub98@gmail.com
-  email_subject: "High-Value Invoices Report"
-  alert_kind: "report"
-  enabled: true
-  threshold: 0
-
-- name: "Invoices"
-  view: "dataproject-458415.dwh_develop.mv_unpaid_invoices"
-  message_template: "The system has found {{count}} invoices that are currently marked as unpaid."
-  link: "https://docs.google.com/spreadsheets/d/1RRNcQdD2aAUcmeMbUz0JJgrJutjiGd1ynl2XXVkNecE/edit?usp=sharing"
-  recipients:
-    - hajek.jakub98@gmail.com
-  email_subject: "Unpaid Invoices Alert2"
-  alert_kind: "report"
-  enabled: true
-  threshold: 0
-
-- name: "Invoices"
-  view: "dataproject-458415.dwh_develop.mv_unpaid_invoices"
-  message_template: "Found {{count}} unpaid invoices."
-  link: "https://docs.google.com/spreadsheets/d/1RRNcQdD2aAUcmeMbUz0JJgrJutjiGd1ynl2XXVkNecE/edit?usp=sharing"
-  recipients:
-    - hajek.jakub98@gmail.com
-  email_subject: "Unpaid Invoices Alert"
+    -
   alert_kind: "trigger"
   enabled: true
   threshold: 0
+
+- name: "High value projects"
+  view: "behavio-bi-sp.test_dwh.view_alert_high_value_projects"
+  message_template: "{{count}} projects exceed CZK 100 million in value."
+  link: "https://docs.google.com/spreadsheets/d/1l5-v709DqCvUekRUSAXkgOfRYtTs7QD9PrWroLGzvvU/edit?usp=sharing"
+  recipients:
+    -
+  alert_kind: "trigger"
+  enabled: true
+  threshold: 0
+
+- name: "Unpaid Invoices"
+  view: "behavio-bi-sp.test_dwh.view_alert_overdue_unpaid_invoices"
+  message_template: "A total of {{count}} unpaid invoices have been identified."
+  link: "https://docs.google.com/spreadsheets/d/112uHl61YYXoMRMSMhuXxlfp8xWIzn_TSyE_6RuIhjjk/edit?usp=sharing"
+  recipients:
+    -
+  alert_kind: "report"
+  enabled: true
+  threshold: 0
+
+- name: "Partially Paid Invoices"
+  view: "behavio-bi-sp.test_dwh.view_alert_overdue_partially_paid_invoices"
+  message_template: "There are {{count}} partially paid invoices that are overdue."
+  link: "https://docs.google.com/spreadsheets/d/1Yt_VSfduRpfMJMl4eICbUV_LWI0nRXHm6GgVrBkZZLU/edit?usp=sharing"
+  recipients:
+    -
+  alert_kind: "report"
+  enabled: true
+  threshold: 0
+
+- name: "Projects Started This Month"
+  view: "behavio-bi-sp.test_dwh.view_alert_projects_started_this_month"
+  message_template: "{{count}} new projects started this month."
+  link: "https://docs.google.com/spreadsheets/d/1GtT8Jsk3k3bwjWhrvR3sDC8Puh8letYELZNB3lDwQPE/edit?usp=sharing"
+  recipients:
+    -
+  alert_kind: "report"
+  enabled: true
+  threshold: 0
+

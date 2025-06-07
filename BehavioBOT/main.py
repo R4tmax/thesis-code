@@ -312,7 +312,7 @@ if user_input:
 
 
                     query_result_for_summary = query_result.applymap(serialize_lists)
-                    summary_prompt = f"Zde jsou výsledky dotazu:\n{query_result_for_summary.to_markdown(index=False)}\n\nOdpověz pouze ve stejném jazyce, v jakém je původní dotaz uživatele. Pokud detekuješ angličtinu, odpověz ANGLICKY, jinak Česky. {user_input}"
+                    summary_prompt = f"Zde jsou výsledky dotazu:\n{query_result_for_summary.to_markdown(index=False)}\n\nOdpověz přirozeným jazykem (česky nebo anglicky dle inputu) na původní otázku: {user_input}"
                     summary_reply = gemini_model.generate_content(summary_prompt)
 
                     # Uložení

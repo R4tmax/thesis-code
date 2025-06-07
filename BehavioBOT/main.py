@@ -14,6 +14,14 @@ from datetime import datetime
 from google.oauth2 import service_account
 import json
 import sys
+from langdetect import detect
+
+def get_lang(text):
+    try:
+        return detect(text)
+    except:
+        return 'unknown'
+
 
 class JsonFormatter(logging.Formatter):
     def format(self, record):
@@ -360,8 +368,7 @@ if user_input:
             - Pokud uživatel použije synonymum (například "klient" místo "zákazník" nebo "customer"), vždy vyber odpovídající sloupec podle významu dotazu.
             - Všechny názvy aliasů a odpovědi ve výstupním SQL piš ve stejném jazyce, v jakém byl uživatelský dotaz.
             - Vždy piš přehledné a čitelné SQL (odsazení, aliasy).
-            - Pokud uživatel zadá jméno klienta nebo zákazníka, které se nemusí přesně shodovat se záznamem v databázi, použij ve WHERE podmínce operátor LIKE nebo ILIKE.
-            - Umožni částečné shody a ignoruj diakritiku a velikost písmen.
+            - Pokud uživatel zadá jméno klienta, které se nemusí přesně shodovat s názvem v datech, ve WHERE podmínce vždy použij REGEXP_CONTAINS(LOWER(NORMALIZE_AND_CASEFOLD(<název sloupce>)), r'\\b<uživatelský dotaz>\\b') místo LIKE, abys minimalizoval falešné shody (např. “avori” vs “javorina”); vždy tímto způsobem ignoruj velikost písmen i diakritiku; pokud uživatel výslovně požaduje částečnou shodu, použij REGEXP_CONTAINS bez hranic slova (r'<dotaz>').
             - Ve shrnutí vždy piš čísla ve formátu běžného zápisu s oddělením tisíců, nikdy ne v zápisu jako 1.2e+06. Nikdy nepoužívej zápis 1.2e+06.
             - LIMITUJ počet záznamů v SQL na 30
 
@@ -379,6 +386,9 @@ if user_input:
             {user_input}
 
             Vrať pouze SQL v bloku ```sql ... ```.
+            
+            
+            **Důležité:** Vždy odpovídej ve stejném jazyce, v jakém byl uživatelský dotaz. Pokud byl položen anglicky, odpovídej anglicky!
             """
 
             model_reply = gemini_model.generate_content(prompt)
@@ -404,7 +414,21 @@ if user_input:
 
 
                     query_result_for_summary = query_result.applymap(serialize_lists)
-                    summary_prompt = f"Zde jsou výsledky dotazu:\n{query_result_for_summary.to_markdown(index=False)}\n\nOdpověz pouze ve stejném jazyce, v jakém je původní dotaz uživatele. Pokud detekuješ angličtinu, odpověz ANGLICKY, jinak Česky. {user_input}"
+                    lang = get_lang(user_input)
+                    if lang == 'en':
+                        summary_prompt = (
+                            f"Here are the results of the query:\n"
+                            f"{query_result_for_summary.to_markdown(index=False)}\n\n"
+                            f"Answer the original question in natural English: {user_input}\n\n"
+                            f"**Important:** Answer in the same language as the input question."
+                        )
+                    else:
+                        summary_prompt = (
+                            f"Zde jsou výsledky dotazu:\n"
+                            f"{query_result_for_summary.to_markdown(index=False)}\n\n"
+                            f"Odpověz přirozeným jazykem na původní otázku: {user_input}\n\n"
+                            f"**Důležité:** Odpověz ve stejném jazyce, v jakém je dotaz."
+                        )
                     summary_reply = gemini_model.generate_content(summary_prompt)
 
                     # Uložení

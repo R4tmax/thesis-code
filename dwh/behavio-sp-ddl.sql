@@ -1,7 +1,9 @@
---- source tables are read as live connection from Data Warehouse source drive, refer to manual
+--- source tables are read as live connection from Data Warehouse source drive
+-- take note that the data can only be read with read rights for the source drive
+-- this condition applies to all SA working via BQ
 
 --- invoice table, manual entry is not linked, refer to manual for further clarification
-
+CREATE OR REPLACE VIEW test_dwh.invoices_act_nonman AS (
 SELECT
     id AS InvoiceID,
     typ_faktury AS InvoiceType,
@@ -28,6 +30,7 @@ SELECT
 FROM `behavio-bi-sp.test_dwh.invoices_act_src`
 
 --- account view
+CREATE OR REPLACE VIEW test_dwh.projects_act AS (
 SELECT
     ProjID AS ProjectID,
     ClientID,
@@ -40,4 +43,4 @@ SELECT
     Start,
     `End`,
     ARR
-FROM `behavio-bi-sp.test_dwh.projects_act_src`
+FROM `behavio-bi-sp.test_dwh.projects_act_src`);

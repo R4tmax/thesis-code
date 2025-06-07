@@ -45,101 +45,9 @@ WHITELISTED_EMAILS = [e.strip().lower() for e in os.getenv("WHITELISTED_EMAILS",
 WHITELISTED_DOMAINS = [d.strip().lower() for d in os.getenv("WHITELISTED_DOMAINS", "").split(",") if d]
 
 
-def is_allowed_email(email):
-    email = email.strip().lower()
-    if email in WHITELISTED_EMAILS:
-        return True
-    return any(email.endswith("@" + domain) for domain in WHITELISTED_DOMAINS)
-
-
-# === OAuth flow ===
-if "user_email" not in st.session_state:
-    code = st.query_params.get("code")
-    if isinstance(code, list):
-        code = code[0]
-
-    oauth = OAuth2Session(
-        client_id=CLIENT_ID,
-        client_secret=CLIENT_SECRET,
-        scope=SCOPE,
-        redirect_uri=REDIRECT_URI,
-    )
-
-
-    def img_to_base64(path):
-        with open(path, "rb") as f:
-            return base64.b64encode(f.read()).decode()
-
-
-    if not code:
-        img_b64 = img_to_base64("images/Google.png")
-        authorization_url, _ = oauth.create_authorization_url(
-            AUTHORIZATION_BASE_URL,
-            prompt="consent",
-            access_type="offline"
-        )
-        st.markdown(
-            f"""
-            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:75vh;">
-                <a href="{authorization_url}" target="_self" style="
-                    background: #4285F4;
-                    color: white;
-                    padding: 24px 36px;
-                    border-radius: 14px;
-                    font-size: 2em;
-                    font-weight: bold;
-                    text-decoration: none;
-                    box-shadow: 0 4px 18px rgba(66,133,244,0.13);
-                    display: flex;
-                    align-items: center;
-                    gap: 26px;
-                    transition: background 0.2s;
-                " onmouseover="this.style.background='#3367d6';" onmouseout="this.style.background='#4285F4';">
-                    <span style="display:flex;align-items:center;justify-content:center;width:54px;height:54px;background:white;border-radius:50%;margin-right:14px;">
-                        <img src="data:image/png;base64,{img_b64}" alt="Google Logo" width="38" height="38" style="display:block;" />
-                    </span>
-                    Přihlásit se Google účtem
-                </a>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        st.stop()
-
-    #   st.write("Code před odesláním:", code)
-    #   st.write("Redirect URI:", REDIRECT_URI)
-    try:
-        token = oauth.fetch_token(
-            TOKEN_URL,
-            code=code,
-            redirect_uri=REDIRECT_URI,
-            include_client_id=True
-        )
-    except Exception as e:
-        st.error(f"❌ Chyba při přihlášení: {e}")
-        st.stop()
-
-    # === Získání info o uživateli ===
-    try:
-        userinfo = oauth.get("https://openidconnect.googleapis.com/v1/userinfo").json()
-        email = userinfo.get("email")
-    except Exception as e:
-        st.error(f"❌ Nepodařilo se získat údaje o uživateli: {e}")
-        st.stop()
-
-    # === Ověření přístupu ===
-    if not email or not is_allowed_email(email):
-        st.error("⛔ Tento účet nemá oprávnění k přístupu.")
-        st.stop()
-
-    # === Uložení uživatele a refresh stránky ===
-    logger.info("LOGIN", extra={"extra": {"event": "login", "user": email}})
-    st.session_state.user_email = email
-    st.query_params.clear()
-    st.rerun()
-
 # === Zobrazení přihlášeného uživatele ===
-st.markdown(f"Přihlášen jako: `{st.session_state.user_email}`")
+st.markdown("Jste přihlášen jako: Host (bez ověření)")
+
 
 # === Inicializace session_state ===
 if "messages_initialized" not in st.session_state:
@@ -203,7 +111,7 @@ def run_bigquery_query(sql_query):
         logger.error("BigQuery ERROR", extra={"extra": {
             "event": "bigquery_error",
             "error": error_msg,
-            "user": st.session_state.get("user_email", "unknown"),
+            "user": "guest",
             "query": sql_query
         }})
         # Specifické chyby
@@ -324,7 +232,7 @@ if user_input:
         st.markdown(user_input)
     logger.info("USER_INPUT", extra={"extra": {
         "event": "user_input",
-        "user": st.session_state.user_email,
+        "user": "user",
         "input": user_input
     }})
 
@@ -390,7 +298,7 @@ if user_input:
                 st.markdown("**SQL dotaz:**")
                 logger.info("SQL_QUERY", extra={"extra": {
                     "event": "sql_query",
-                    "user": st.session_state.user_email,
+                    "user": "guest",
                     "query": sql_query
                 }})
                 st.code(sql_query, language="sql")

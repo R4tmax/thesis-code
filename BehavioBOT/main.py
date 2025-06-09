@@ -289,7 +289,7 @@ if user_input:
             Vrať pouze SQL v bloku ```sql ... ```.
             """
 
-            model_reply = gemini_model.generate_content(prompt)
+            model_reply = gemini_model.generate_content(prompt, generation_config={"temperature": 0.2})
             sql_query = extract_sql_block(model_reply.text)
 
             if not sql_query:
@@ -313,7 +313,7 @@ if user_input:
 
                     query_result_for_summary = query_result.applymap(serialize_lists)
                     summary_prompt = f"Zde jsou výsledky dotazu:\n{query_result_for_summary.to_markdown(index=False)}\n\nOdpověz přirozeným jazykem (česky nebo anglicky dle inputu) na původní otázku: {user_input}"
-                    summary_reply = gemini_model.generate_content(summary_prompt)
+                    summary_reply = gemini_model.generate_content(summary_prompt, generation_config={"temperature": 0.2})
 
                     # Uložení
                     st.session_state.last_query_result = query_result

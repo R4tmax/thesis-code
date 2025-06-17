@@ -75,12 +75,7 @@ streamlit run main.py
 
 ```
 gcloud builds submit --tag gcr.io/behavio-bi-sp/behavio-bot
-gcloud run deploy behavio-bot \
-  --image gcr.io/behavio-bi-sp/behavio-bot \
-  --service-account=sa-nlq-behavio-bot@behavio-bi-sp.iam.gserviceaccount.com \
-  --platform managed \
-  --region europe-west3 \
-  --allow-unauthenticated
+gcloud run deploy behavio-bot --image gcr.io/behavio-bi-sp/behavio-bot --service-account=sa-nlq-behavio-bot@behavio-bi-sp.iam.gserviceaccount.com --platform managed --region europe-west3 --allow-unauthenticated
 ```
 
 Po nasazení získáš veřejný odkaz. Aplikace se automaticky uspí při neaktivitě (0 traffic).

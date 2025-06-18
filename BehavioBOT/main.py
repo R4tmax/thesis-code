@@ -335,7 +335,7 @@ if user_input:
         "user": st.session_state.user_email,
         "input": user_input
     }})
-
+    lang = get_lang(user_input)
     with st.chat_message("assistant"):
         with st.spinner("Získávám odpověď..."):
             tables_context = make_tables_context(tables_config)
@@ -351,6 +351,7 @@ if user_input:
 
             1. Vyber pouze jednu nejvhodnější tabulku ze seznamu níže (viz popis a schéma).
             2. Vygeneruj přesný, platný a optimalizovaný SQL dotaz pro BigQuery.
+            3. Práci s Aliasy dělej v detekovaném jazyce na vstupu uživatele: {lang}, Každý alias musí být v tomto jazyce.
 
             **Pravidla:**
             - Používej pouze názvy sloupců uvedené ve schématu. Nepřidávej žádné jiné sloupce.
@@ -359,6 +360,7 @@ if user_input:
             - Pokud dotaz odkazuje na “poslední” data a není jasné podle čeho, použij nejvhodnější časový sloupec (např. Start, End, BookingDate, issue_date).
             - SQL dotaz vrať pouze v bloku ```sql ... ```, bez dalších komentářů nebo vysvětlení.
             - Alias (AS ...) piš pouze s písmeny bez diakritiky, čísly a podtržítkem. Nepoužívej mezery ani speciální znaky.
+            - Nikdy v SQL aliasu ani jinde v kódu NEPOUŽÍVEJ diakritiku ani jiné než ASCII znaky.
             - Pro sloupce typu ARRAY vždy použij převod na STRING pomocí ARRAY_TO_STRING(...), ale NIKDY nepřeváděj STRING pomocí ARRAY_TO_STRING.
             - Počet řádků počítej jako COUNT(*). COUNT(DISTINCT ...) použij jen, pokud uživatel výslovně chce unikátní hodnoty (např. “unikátních”, “distinct”).
             - Pokud není jasné, co je unikátní, počítej řádky jako COUNT(*).
@@ -371,6 +373,8 @@ if user_input:
             - Pokud uživatel zadá jméno klienta, které se nemusí přesně shodovat s názvem v datech, ve WHERE podmínce vždy použij REGEXP_CONTAINS(LOWER(NORMALIZE_AND_CASEFOLD(<název sloupce>)), r'\\b<uživatelský dotaz>\\b') místo LIKE, abys minimalizoval falešné shody (např. “avori” vs “javorina”); vždy tímto způsobem ignoruj velikost písmen i diakritiku; pokud uživatel výslovně požaduje částečnou shodu, použij REGEXP_CONTAINS bez hranic slova (r'<dotaz>').
             - Ve shrnutí vždy piš čísla ve formátu běžného zápisu s oddělením tisíců, nikdy ne v zápisu jako 1.2e+06. Nikdy nepoužívej zápis 1.2e+06.
             - LIMITUJ počet záznamů v SQL na 30
+            - Pokud se uživatel zeptá, za co je faktura u klienta, vycházej z dat o projektech pro daného klienta. TYTO TABULKY NESPOJUJ!.
+            - Pokud ve SELECT používáš jak agregaci, tak i sloupce, které nejsou v agregaci, musíš tyto sloupce uvést také v GROUP BY.
 
 
 
@@ -391,11 +395,11 @@ if user_input:
             **Důležité:** Vždy odpovídej ve stejném jazyce, v jakém byl uživatelský dotaz. Pokud byl položen anglicky, odpovídej anglicky!
             """
 
-            model_reply = gemini_model.generate_content(prompt)
+            model_reply = gemini_model.generate_content(prompt, generation_config={"temperature": 0.0})
             sql_query = extract_sql_block(model_reply.text)
 
             if not sql_query:
-                st.markdown("_Nepodařilo se extrahovat SQL dotaz z odpovědi. Přeformulujte prosím dotaz._")
+                st.markdown("_Nepodařilo se extrahovat SQL dotaz z odpovědi, protože se nevztahuje k datům. Přeformulujte prosím váš dotaz._")
             else:
                 st.markdown("**SQL dotaz:**")
                 logger.info("SQL_QUERY", extra={"extra": {
@@ -414,7 +418,6 @@ if user_input:
 
 
                     query_result_for_summary = query_result.applymap(serialize_lists)
-                    lang = get_lang(user_input)
                     if lang == 'en':
                         summary_prompt = (
                             f"Here are the results of the query:\n"
@@ -429,7 +432,7 @@ if user_input:
                             f"Odpověz přirozeným jazykem na původní otázku: {user_input}\n\n"
                             f"**Důležité:** Odpověz ve stejném jazyce, v jakém je dotaz."
                         )
-                    summary_reply = gemini_model.generate_content(summary_prompt)
+                    summary_reply = gemini_model.generate_content(summary_prompt, generation_config={"temperature": 0.0})
 
                     # Uložení
                     st.session_state.last_query_result = query_result

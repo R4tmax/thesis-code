@@ -1,0 +1,22 @@
+[project]
+name = "autodwh-tf-deployment"
+version = "0.1.0"
+description = "Thesis project of Martin Kadlec regarding IaC"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "authlib>=1.6.6",
+    "faker>=40.1.2",
+    "google-api-python-client>=2.188.0",
+    "google-auth>=2.48.0",
+    "google-cloud-bigquery>=3.40.0",
+    "google-cloud-secret-manager>=2.26.0",
+    "google-cloud-storage>=2.19.0",
+    "gspread>=6.2.1",
+    "langdetect>=1.0.9",
+    "pandas>=2.3.3",
+    "python-dotenv>=1.2.1",
+    "pyyaml>=6.0.3",
+    "streamlit>=1.53.1",
+    "vertexai>=1.71.1",
+]

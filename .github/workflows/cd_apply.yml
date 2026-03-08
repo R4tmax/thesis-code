@@ -1,6 +1,5 @@
 name: 'CD Pipeline: Infra & App Deploy'
 
-# This triggers ONLY when the Authorized approver merges the PR into the dev branch
 on:
   push:
     branches:

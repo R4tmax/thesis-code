@@ -37,7 +37,7 @@ resource "google_service_account_iam_member" "github_actions_sa_binding" {
   service_account_id = google_service_account.github_actions_sa.name
   role               = "roles/iam.workloadIdentityUser"
 
-  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_pool.name}/attribute.repository/R4tmax/thesis-code"
+  member = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_pool.name}/attribute.repository/R4tmax/thesis-code"
 }
 
 

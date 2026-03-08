@@ -42,7 +42,7 @@ EOF
 
 # 3. Inject Test Data (The Bootstrapper)
 resource "google_bigquery_job" "inject_test_data" {
-  job_id     = "inject_dummy_data_${var.environment}_${timestamp()}"
+  job_id     = "inject_dummy_data_${var.environment}_${formatdate("YYYYMMDDhhmmss", timestamp())}"
   project    = var.project_id
   location   = var.location
 

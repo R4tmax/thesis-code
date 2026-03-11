@@ -9,6 +9,18 @@ resource "google_project_iam_member" "sa_default_role" {
   member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
 }
 
+resource "google_storage_bucket_iam_member" "sa_state_bucket_admin" {
+  bucket = "thesis-kadm09-dev_state_bucket"
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+resource "google_project_iam_member" "sa_bigquery_admin" {
+  project = var.dev_proj_id
+  role    = "roles/bigquery.admin"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
 resource "google_iam_workload_identity_pool" "github_pool" {
   workload_identity_pool_id = "github-actions-pool"
   display_name              = "GitHub Actions Pool"
@@ -37,7 +49,7 @@ resource "google_service_account_iam_member" "github_actions_sa_binding" {
   service_account_id = google_service_account.github_actions_sa.name
   role               = "roles/iam.workloadIdentityUser"
 
-  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_pool.name}/attribute.repository/R4tmax/thesis-code"
+  member = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_pool.name}/attribute.repository/R4tmax/thesis-code"
 }
 
 

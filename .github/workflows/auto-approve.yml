@@ -1,0 +1,22 @@
+name: 'Self-Approve Bot'
+
+
+on:
+  pull_request_target:
+    types: [labeled]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  approve:
+    name: 'Auto-Approve PR'
+    if: github.event.label.name == 'self-approve' && github.actor == 'R4tmax'
+    runs-on: self-hosted
+    steps:
+      - name: Submit Approval
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          gh pr review "$PR_URL" --approve -b "🤖 Auto-approved by pipeline because the 'self-approve' label was applied."

@@ -1,6 +1,6 @@
 variable "dev_proj_id" {
-  type = string
-  default = "thesis-kadm09-dev"
+  type        = string
+  default     = "thesis-kadm09-dev"
   description = "UUID of the project corresponding to the target provision"
 }
 

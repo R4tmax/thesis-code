@@ -53,7 +53,7 @@ jobs:
   deploy_alerting:
     name: 'deploy_alerting.yml'
     needs: terraform_apply # This enforces the "CD OK?" check from your diagram
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -66,7 +66,7 @@ jobs:
   deploy_nlp:
     name: 'deploy_nlp.yml'
     needs: terraform_apply # Also waits for Terraform to finish successfully
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4

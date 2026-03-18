@@ -10,16 +10,11 @@ permissions:
   contents: read
   id-token: write
 
-# CRITICAL: This concurrency block prevents the "Stale Plan" race condition we discussed.
-# It ensures only one deployment to the dev environment can happen at a time.
 concurrency:
   group: deploy-dev-environment
   cancel-in-progress: false
 
 jobs:
-  # ==========================================
-  # PHASE 1: infra CD
-  # ==========================================
   terraform_apply:
     name: 'terraform_apply.yml'
     runs-on: self-hosted
@@ -33,7 +28,6 @@ jobs:
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
         with:
-          # Pulling securely from GitHub Secrets!
           workload_identity_provider: ${{ secrets.GCP_DEV_WIF_PROVIDER }}
           service_account: ${{ secrets.GCP_DEV_CICD_SA }}
 
@@ -43,16 +37,13 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      # Since the PR was approved, we apply the merged code automatically
       - name: Terraform Apply
         run: terraform apply -auto-approve
 
-  # ==========================================
-  # PHASE 2: aux scripts layer + application CD
-  # ==========================================
+
   deploy_alerting:
     name: 'deploy_alerting.yml'
-    needs: terraform_apply # This enforces the "CD OK?" check from your diagram
+    needs: terraform_apply
     runs-on: self-hosted
     steps:
       - name: Checkout Code
@@ -65,7 +56,7 @@ jobs:
 
   deploy_nlp:
     name: 'deploy_nlp.yml'
-    needs: terraform_apply # Also waits for Terraform to finish successfully
+    needs: terraform_apply
     runs-on: self-hosted
     steps:
       - name: Checkout Code

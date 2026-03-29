@@ -14,11 +14,11 @@ permissions:
 
 jobs:
   app_ci:
-    uses: ./.github/workflows/app-ci-module.yml
+    uses: ./.github/workflows/ci_app.yml
 
   tf_ci_dev:
     if: github.base_ref == 'dev'
-    uses: ./.github/workflows/tf-ci-module.yml
+    uses: ./.github/workflows/ci_tf.yml
     with:
       environment: 'dev'
     secrets:
@@ -27,7 +27,7 @@ jobs:
 
   tf_ci_prod:
     if: github.base_ref == 'prod'
-    uses: ./.github/workflows/tf-ci-module.yml
+    uses: ./.github/workflows/ci_tf.yml
     with:
       environment: 'prod'
     secrets:

@@ -13,7 +13,7 @@ permissions:
 jobs:
   tf_cd_dev:
     if: github.ref_name == 'dev'
-    uses: ./.github/workflows/tf-cd-module.yml
+    uses: ./.github/workflows/cd_tf.yml
     with:
       environment: 'dev'
     secrets:
@@ -22,7 +22,7 @@ jobs:
 
   tf_cd_prod:
     if: github.ref_name == 'prod'
-    uses: ./.github/workflows/tf-cd-module.yml
+    uses: ./.github/workflows/tf_cd.yml
     with:
       environment: 'prod'
     secrets:
@@ -33,13 +33,13 @@ jobs:
   app_cd_dev:
     needs: tf_cd_dev
     if: always() && needs.tf_cd_dev.result == 'success'
-    uses: ./.github/workflows/app-cd-module.yml
+    uses: ./.github/workflows/cd_app.yml
     with:
       environment: 'dev'
 
   app_cd_prod:
     needs: tf_cd_prod
     if: always() && needs.tf_cd_prod.result == 'success'
-    uses: ./.github/workflows/app-cd-module.yml
+    uses: ./.github/workflows/cd_app.yml
     with:
       environment: 'prod'

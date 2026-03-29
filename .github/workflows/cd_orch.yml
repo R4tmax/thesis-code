@@ -1,0 +1,45 @@
+name: 'CD Orchestrator'
+
+on:
+  push:
+    branches:
+      - dev
+      - prod
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  tf_cd_dev:
+    if: github.ref_name == 'dev'
+    uses: ./.github/workflows/tf-cd-module.yml
+    with:
+      environment: 'dev'
+    secrets:
+      WIF_PROVIDER: ${{ secrets.GCP_DEV_WIF_PROVIDER }}
+      CICD_SA: ${{ secrets.GCP_DEV_CICD_SA }}
+
+  tf_cd_prod:
+    if: github.ref_name == 'prod'
+    uses: ./.github/workflows/tf-cd-module.yml
+    with:
+      environment: 'prod'
+    secrets:
+      WIF_PROVIDER: ${{ secrets.GCP_PROD_WIF_PROVIDER }}
+      CICD_SA: ${{ secrets.GCP_PROD_CICD_SA }}
+
+
+  app_cd_dev:
+    needs: tf_cd_dev
+    if: always() && needs.tf_cd_dev.result == 'success'
+    uses: ./.github/workflows/app-cd-module.yml
+    with:
+      environment: 'dev'
+
+  app_cd_prod:
+    needs: tf_cd_prod
+    if: always() && needs.tf_cd_prod.result == 'success'
+    uses: ./.github/workflows/app-cd-module.yml
+    with:
+      environment: 'prod'

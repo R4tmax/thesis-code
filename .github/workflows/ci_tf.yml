@@ -1,0 +1,99 @@
+name: 'Terraform CI'
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+    secrets:
+      WIF_PROVIDER:
+        required: true
+      CICD_SA:
+        required: true
+
+jobs:
+  stateless_checks:
+    name: 'TF fmt & validate'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: TF fmt
+        run: terraform fmt -check -recursive
+
+      - name: TF validate
+        run: |
+          for dir in $(find . -type f -name '*.tf' -exec dirname {} \; | sort -u); do
+            echo "Validating $dir..."
+            cd $dir
+            terraform init -backend=false
+            terraform validate
+            cd -
+          done
+
+plan:
+    name: 'Terraform Plan (${{ inputs.environment }})'
+    needs: stateless_checks
+    runs-on: self-hosted
+    concurrency:
+      group: tf-plan-${{ github.head_ref || github.run_id }}-${{ inputs.environment }}
+      cancel-in-progress: true
+
+    defaults:
+      run:
+        working-directory: ./infrastructure/environments/${{ inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.CICD_SA }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan -no-color -out=tfplan
+
+      - name: Convert Plan to Text
+        run: terraform show -no-color tfplan > plan.txt
+
+      - name: Post Plan to PR
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        env:
+          ENV_NAME: ${{ inputs.environment }}
+        with:
+          script: |
+            const fs = require('fs');
+            const envName = process.env.ENV_NAME;
+            
+            const planOutput = fs.readFileSync(`./infrastructure/environments/${envName}/plan.txt`, 'utf8');
+            
+            const truncatedPlan = planOutput.length > 60000 
+              ? planOutput.substring(0, 60000) + '\n\n... Plan truncated due to GitHub character limits ...' 
+              : planOutput;
+
+            const commentBody = `### Terraform Plan: \`${envName}\`
+            <details><summary>Click to view the execution plan</summary>
+            
+            \`\`\`terraform
+            ${truncatedPlan}
+            \`\`\`
+            </details>`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody
+            })

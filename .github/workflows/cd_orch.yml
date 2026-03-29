@@ -22,7 +22,7 @@ jobs:
 
   tf_cd_prod:
     if: github.ref_name == 'prod'
-    uses: ./.github/workflows/tf_cd.yml
+    uses: ./.github/workflows/cd_tf.yml
     with:
       environment: 'prod'
     secrets:

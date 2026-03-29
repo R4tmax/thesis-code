@@ -3,5 +3,5 @@ output "dataset_id" {
 }
 
 output "table_id" {
-  value = google_bigquery_table.test_table.table_id
+  value = google_bigquery_table.invoices_table.table_id
 }

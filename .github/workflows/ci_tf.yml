@@ -1,12 +1,9 @@
-name: 'Terraform CI Module'
+name: 'Terraform CI'
 
 on:
   workflow_call:
     inputs:
       environment:
-        required: true
-        type: string
-      working_directory:
         required: true
         type: string
     secrets:
@@ -16,20 +13,17 @@ on:
         required: true
 
 jobs:
-  global_stateless_checks:
-    name: 'Global Formating & Validation'
+  stateless_checks:
+    name: 'TF fmt & validate'
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_wrapper: false # Prevents Node.js errors on fresh runners!
 
-      - name: Check Formatting (Repo-wide)
+      - name: TF fmt
         run: terraform fmt -check -recursive
 
-      - name: Validate All Terraform Directories
-        # This bash loop finds every folder containing .tf files and validates them offline
+      - name: TF validate
         run: |
           for dir in $(find . -type f -name '*.tf' -exec dirname {} \; | sort -u); do
             echo "Validating $dir..."
@@ -39,19 +33,18 @@ jobs:
             cd -
           done
 
-  plan:
+plan:
     name: 'Terraform Plan (${{ inputs.environment }})'
-    needs: global_stateless_checks
+    needs: stateless_checks
     runs-on: self-hosted
-
-    # The Concurrency Lock: Cancels previous runs on the same PR to free up the state lock
     concurrency:
       group: tf-plan-${{ github.head_ref || github.run_id }}-${{ inputs.environment }}
       cancel-in-progress: true
 
     defaults:
       run:
-        working-directory: ${{ inputs.working_directory }}
+        working-directory: ./infrastructure/environments/${{ inputs.environment }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -69,11 +62,38 @@ jobs:
         run: terraform init
 
       - name: Terraform Plan
-        id: plan
         run: terraform plan -no-color -out=tfplan
 
-      - name: Upload TF Plan Artifact
-        uses: actions/upload-artifact@v4
+      - name: Convert Plan to Text
+        run: terraform show -no-color tfplan > plan.txt
+
+      - name: Post Plan to PR
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        env:
+          ENV_NAME: ${{ inputs.environment }}
         with:
-          name: tfplan-${{ inputs.environment }}-artifact
-          path: ${{ inputs.working_directory }}/tfplan
+          script: |
+            const fs = require('fs');
+            const envName = process.env.ENV_NAME;
+            
+            const planOutput = fs.readFileSync(`./infrastructure/environments/${envName}/plan.txt`, 'utf8');
+            
+            const truncatedPlan = planOutput.length > 60000 
+              ? planOutput.substring(0, 60000) + '\n\n... Plan truncated due to GitHub character limits ...' 
+              : planOutput;
+
+            const commentBody = `### Terraform Plan: \`${envName}\`
+            <details><summary>Click to view the execution plan</summary>
+            
+            \`\`\`terraform
+            ${truncatedPlan}
+            \`\`\`
+            </details>`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody
+            })

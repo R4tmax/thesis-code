@@ -1,0 +1,49 @@
+name: 'Terraform CD'
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+    secrets:
+      WIF_PROVIDER:
+        required: true
+      CICD_SA:
+        required: true
+
+jobs:
+  apply:
+    name: 'Terraform Apply (${{ inputs.environment }})'
+    runs-on: self-hosted
+    concurrency:
+      group: tf-apply-${{ inputs.environment }}
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: ./infrastructure/environments/${{ inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download TF Plan Artifact
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: ci_orch.yml
+          commit: ${{ github.sha }}
+          name: tfplan-${{ inputs.environment }}-artifact
+          path: ./infrastructure/environments/${{ inputs.environment }}
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.CICD_SA }}
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        run: terraform apply tfplan

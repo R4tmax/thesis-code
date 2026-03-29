@@ -6,6 +6,13 @@ on:
       environment:
         required: true
         type: string
+    secrets:
+      WIF_PROVIDER:
+        required: true
+      CICD_SA:
+        required: true
+      PROJECT_ID:
+        required: true
 
 jobs:
   deploy_nlp:
@@ -14,8 +21,39 @@ jobs:
     steps:
       - run: echo "Deploying NLP App to ${{ inputs.environment }}..."
 
-  deploy_alerting:
-    name: 'Deploy Alerting (${{ inputs.environment }})'
-    runs-on: self-hosted
+  seed_database:
+    name: 'Seed BigQuery /w Mock Data'
+    needs: deploy_nlp
+    if: inputs.environment == 'dev'
+    runs-on: ubuntu-latest
     steps:
-      - run: echo "Deploying Alerting to ${{ inputs.environment }}..."
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python Dependencies
+        run: pip install pandas faker
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.CICD_SA }}
+
+      - name: Generate Mock Data
+        run: python src/externalScripts/mock-data.py
+
+      - name: Load Data to BigQuery
+
+        run: |
+          bq load \
+            --source_format=CSV \
+            --replace \
+            --skip_leading_rows=1 \
+            --autodetect \
+            ${{ secrets.PROJECT_ID }}:my_app_data_dev.users_data \
+            mock_invoices.csv

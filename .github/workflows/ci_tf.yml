@@ -1,0 +1,79 @@
+name: 'Terraform CI Module'
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      working_directory:
+        required: true
+        type: string
+    secrets:
+      WIF_PROVIDER:
+        required: true
+      CICD_SA:
+        required: true
+
+jobs:
+  global_stateless_checks:
+    name: 'Global Formating & Validation'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false # Prevents Node.js errors on fresh runners!
+
+      - name: Check Formatting (Repo-wide)
+        run: terraform fmt -check -recursive
+
+      - name: Validate All Terraform Directories
+        # This bash loop finds every folder containing .tf files and validates them offline
+        run: |
+          for dir in $(find . -type f -name '*.tf' -exec dirname {} \; | sort -u); do
+            echo "Validating $dir..."
+            cd $dir
+            terraform init -backend=false
+            terraform validate
+            cd -
+          done
+
+  plan:
+    name: 'Terraform Plan (${{ inputs.environment }})'
+    needs: global_stateless_checks
+    runs-on: self-hosted
+
+    # The Concurrency Lock: Cancels previous runs on the same PR to free up the state lock
+    concurrency:
+      group: tf-plan-${{ github.head_ref || github.run_id }}-${{ inputs.environment }}
+      cancel-in-progress: true
+
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.CICD_SA }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -out=tfplan
+
+      - name: Upload TF Plan Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ inputs.environment }}-artifact
+          path: ${{ inputs.working_directory }}/tfplan

@@ -1,0 +1,12 @@
+name: 'App CI Module'
+
+on:
+  workflow_call:
+
+jobs:
+  validate_source_code:
+    name: 'Lint Application Code'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Linting application code..."

@@ -42,7 +42,7 @@ module "nlp_app" {
   app_name    = "behavio-bot"
 
   # Connect the App to the Database!
-  dataset_id  = module.bigquery_database.dataset_id
+  dataset_id = module.bigquery_database.dataset_id
 
   # Inject the Client ID (Client Secret is handled via GCP Console/Pipeline)
   oauth_client_id = var.oauth_client_id

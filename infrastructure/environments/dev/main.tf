@@ -34,7 +34,7 @@ resource "google_artifact_registry_repository" "app_registry" {
 
 # 2. The App Infrastructure
 module "nlp_app" {
-  source = "../../modules/cloud_run_app"
+  source = "../../modules/behavio_bot"
 
   project_id  = var.dev_proj_id
   environment = "dev"

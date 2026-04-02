@@ -21,3 +21,29 @@ module "bigquery_database" {
   delete_contents_on_destroy = true
   deletion_protection        = false
 }
+
+# 1. Artifact Registry for the Dev Environment Docker Images
+resource "google_artifact_registry_repository" "app_registry" {
+  provider      = google
+  project       = var.dev_proj_id
+  location      = "europe-west3"
+  repository_id = "behavio-repo-dev"
+  description   = "Docker repository for the Behavio MVP"
+  format        = "DOCKER"
+}
+
+# 2. The App Infrastructure
+module "nlp_app" {
+  source = "../../modules/cloud_run_app"
+
+  project_id  = var.dev_proj_id
+  environment = "dev"
+  location    = "europe-west3"
+  app_name    = "behavio-bot"
+
+  # Connect the App to the Database!
+  dataset_id  = module.bigquery_database.dataset_id
+
+  # Inject the Client ID (Client Secret is handled via GCP Console/Pipeline)
+  oauth_client_id = var.oauth_client_id
+}

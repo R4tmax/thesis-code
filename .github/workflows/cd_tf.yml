@@ -17,8 +17,8 @@ jobs:
     name: 'Terraform Apply (${{ inputs.environment }})'
     runs-on: self-hosted
     concurrency:
-      group: tf-apply-${{ inputs.environment }}
-      cancel-in-progress: false
+          group: terraform-${{ inputs.environment }}
+          cancel-in-progress: false
     defaults:
       run:
         working-directory: ./infrastructure/environments/${{ inputs.environment }}

@@ -30,9 +30,9 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow: ci_orch.yml
-          commit: ${{ github.sha }}
           name: tfplan-${{ inputs.environment }}-artifact
           path: ./infrastructure/environments/${{ inputs.environment }}
+          search_artifacts: true
 
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2

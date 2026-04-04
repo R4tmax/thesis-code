@@ -97,3 +97,9 @@ jobs:
                 repo: context.repo.repo,
                 body: commentBody
               })
+        - name: Upload TF Plan Artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: tfplan-${{ inputs.environment }}-artifact
+            path: ./infrastructure/environments/${{ inputs.environment }}/tfplan
+            retention-days: 7

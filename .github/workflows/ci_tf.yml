@@ -38,8 +38,8 @@ jobs:
       needs: stateless_checks
       runs-on: self-hosted
       concurrency:
-        group: tf-plan-${{ github.head_ref || github.run_id }}-${{ inputs.environment }}
-        cancel-in-progress: true
+            group: terraform-${{ inputs.environment }}
+            cancel-in-progress: false
   
       defaults:
         run:
@@ -102,4 +102,3 @@ jobs:
           with:
             name: tfplan-${{ inputs.environment }}-artifact
             path: ./infrastructure/environments/${{ inputs.environment }}/tfplan
-            retention-days: 7

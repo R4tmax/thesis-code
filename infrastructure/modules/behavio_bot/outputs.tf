@@ -10,5 +10,5 @@ output "service_account_email" {
 
 output "secret_id" {
   description = "The ID of the Secret Manager secret for the OAuth Client Secret"
-  value       = google_secret_manager_secret.oauth_client_secret.secret_id
+  value       = data.google_secret_manager_secret.oauth_client_secret.secret_id
 }

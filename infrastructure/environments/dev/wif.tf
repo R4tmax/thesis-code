@@ -9,6 +9,32 @@ resource "google_project_iam_member" "sa_default_role" {
   member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
 }
 
+resource "google_project_iam_member" "sa_ar_role" {
+  project = var.dev_proj_id
+  role    = "roles/artifactregistry.admin"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+resource "google_project_iam_member" "sa_app_acc_role" {
+  project = var.dev_proj_id
+  role    = "roles/iam.serviceAccountAdmin"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+resource "google_project_iam_member" "sa_iam_admin_role" {
+  project = var.dev_proj_id
+  role    = "roles/resourcemanager.projectIamAdmin"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+resource "google_project_iam_member" "sa_run_admin_role" {
+  project = var.dev_proj_id
+  role    = "roles/run.admin"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+
+
 resource "google_storage_bucket_iam_member" "sa_state_bucket_admin" {
   bucket = "thesis-kadm09-dev_state_bucket"
   role   = "roles/storage.objectAdmin"

@@ -33,6 +33,18 @@ resource "google_project_iam_member" "sa_run_admin_role" {
   member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
 }
 
+resource "google_project_iam_member" "sa_binding_role" {
+  project = var.dev_proj_id
+  role    = "roles/secretmanager.admin"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+resource "google_project_iam_member" "sa_impersonation_role" {
+  project = var.dev_proj_id
+  role    = "roles/iam.serviceAccountUser"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
 
 
 resource "google_storage_bucket_iam_member" "sa_state_bucket_admin" {

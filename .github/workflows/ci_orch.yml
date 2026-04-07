@@ -24,6 +24,7 @@ jobs:
     secrets:
       WIF_PROVIDER: ${{ secrets.GCP_DEV_WIF_PROVIDER }}
       CICD_SA: ${{ secrets.GCP_DEV_CICD_SA }}
+      PROJECT_ID: ${{ secrets.GCP_DEV_PROJECT_ID }}
 
   tf_ci_prod:
     if: github.base_ref == 'prod'
@@ -33,3 +34,4 @@ jobs:
     secrets:
       WIF_PROVIDER: ${{ secrets.GCP_PROD_WIF_PROVIDER }}
       CICD_SA: ${{ secrets.GCP_PROD_CICD_SA }}
+      PROJECT_ID: ${{ secrets.GCP_DEV_PROJECT_ID }}

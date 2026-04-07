@@ -11,6 +11,8 @@ on:
         required: true
       CICD_SA:
         required: true
+      PROJECT_ID:
+        required: true
 
 jobs:
   stateless_checks:
@@ -32,6 +34,19 @@ jobs:
             terraform validate
             cd -
           done
+
+  tfsec:
+    name: 'TFSec Vulnerability Scan'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run tfsec with PR comments
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          soft_fail: true
+          #working_directory: ./infrastructure/environments/${{ inputs.environment }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
   plan:
       name: 'Terraform Plan (${{ inputs.environment }})'
@@ -63,11 +78,29 @@ jobs:
   
         - name: Terraform Plan
           run: terraform plan -no-color -out=tfplan
-  
-        - name: Convert Plan to Text
+
+        - name: Convert Plan to Text (PR Comment)
           run: terraform show -no-color tfplan > plan.txt
-  
-        - name: Post Plan to PR
+
+        - name: Convert Plan to JSON (GCP Vet)
+          run: terraform show -json tfplan > tfplan.json
+
+        - name: Clone GCP std policies
+          run: git clone https://github.com/GoogleCloudPlatform/policy-library.git
+
+        - name: Enable policies
+          run: |
+            mkdir -p policy-library/policies/constraints
+            cp policy-library/samples/* policy-library/policies/constraints/ 2>/dev/null || true
+
+        - name: Run gcloud terraform vet
+          run: |
+            gcloud beta terraform vet tfplan.json \
+              --policy-library=policy-library \
+              --project=${{ inputs.project_id }} \
+              > vet_results.txt 2>&1 || true
+
+        - name: Post Plan and Vet Results to PR
           uses: actions/github-script@v7
           if: github.event_name == 'pull_request'
           env:
@@ -78,16 +111,30 @@ jobs:
               const envName = process.env.ENV_NAME;
               
               const planOutput = fs.readFileSync(`./infrastructure/environments/${envName}/plan.txt`, 'utf8');
-              
               const truncatedPlan = planOutput.length > 60000 
                 ? planOutput.substring(0, 60000) + '\n\n... Plan truncated due to GitHub character limits ...' 
                 : planOutput;
-  
-              const commentBody = `### Terraform Plan: \`${envName}\`
-              <details><summary>Click to view the execution plan</summary>
+
+              let vetOutput = "No vet results generated.";
+              try {
+                vetOutput = fs.readFileSync(`./infrastructure/environments/${envName}/vet_results.txt`, 'utf8');
+              } catch (e) {
+                console.log("Vet results file not found, skipping.");
+              }
+
+              const commentBody = `### Terraform Execution Plan: \`${envName}\`
+              <details><summary><b>Click to view the infrastructure plan</b></summary>
               
               \`\`\`terraform
               ${truncatedPlan}
+              \`\`\`
+              </details>
+
+              ### GCP Terraform Vet Results
+              <details><summary><b>Click to view policy validation results</b></summary>
+              
+              \`\`\`text
+              ${vetOutput}
               \`\`\`
               </details>`;
   
@@ -97,6 +144,7 @@ jobs:
                 repo: context.repo.repo,
                 body: commentBody
               })
+
         - name: Upload TF Plan Artifact
           uses: actions/upload-artifact@v4
           with:

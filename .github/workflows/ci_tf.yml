@@ -11,6 +11,8 @@ on:
         required: true
       CICD_SA:
         required: true
+      PROJECT_ID:
+        required: true
 
 jobs:
   stateless_checks:

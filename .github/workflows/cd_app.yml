@@ -55,5 +55,5 @@ jobs:
             --replace \
             --skip_leading_rows=1 \
             --autodetect \
-            ${{ secrets.PROJECT_ID }}:my_app_data_dev.users_data \
+            ${{ secrets.PROJECT_ID }}:my_app_data_dev.invoices \
             mock_invoices.csv

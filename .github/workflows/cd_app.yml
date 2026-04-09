@@ -115,7 +115,7 @@ jobs:
           pip install google-cloud-bigquery pyyaml
           
           echo "Executing schema generator..."
-          python src/externalScripts/generate_yaml_schema.py
+          python src/externalScripts/build-metadata.py
 
       - name: Schema readback
         run: cat tables.yaml

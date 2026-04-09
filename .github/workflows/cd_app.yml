@@ -19,15 +19,18 @@ jobs:
   seed_database:
     name: 'Seed BigQuery /w Mock Data (${{ inputs.environment }})'
     if: inputs.environment == 'dev'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.14'
+#      - name: Set up Python
+#        uses: actions/setup-python@v5
+#        with:
+#          python-version: '3.14'
+
+      - name: Verify Py version
+        run: python --version
 
       - name: Install Python Dependencies
         run: pip install pandas faker
@@ -78,10 +81,13 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Set up Python for metadata gen
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.14'
+#      - name: Set up Python for metadata gen
+#        uses: actions/setup-python@v5
+#        with:
+#          python-version: '3.14'
+
+      - name: Verify Py version
+        run: python --version
 
       - name: Install Schema Generator Dependencies
         run: pip install google-cloud-bigquery pyyaml

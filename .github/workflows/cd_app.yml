@@ -33,8 +33,8 @@ jobs:
       - name: Verify Py version
         run: python --version
 
-      - name: Install Python Dependencies
-        run: pip install pandas faker
+#      - name: Install Python Dependencies
+#        run: pip install pandas faker
 
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
@@ -45,8 +45,17 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Generate Mock Data
-        run: python src/externalScripts/mock-data.py
+      - name: Generate Mock Data (venv)
+        run: |
+          echo "Setting up Virtual Environment..."
+          python -m venv .venv
+          source .venv/bin/activate
+          
+          echo "Installing dependencies..."
+          pip install pandas faker
+          
+          echo "Executing mock data script..."
+          python src/externalScripts/mock-data.py
 
       - name: Load Data to BigQuery
         run: |
@@ -90,14 +99,23 @@ jobs:
       - name: Verify Py version
         run: python --version
 
-      - name: Install Schema Generator Dependencies
-        run: pip install google-cloud-bigquery pyyaml
+#      - name: Install Schema Generator Dependencies
+#        run: pip install google-cloud-bigquery pyyaml
 
       - name: Generate tables.yaml
         env:
           GCP_PROJECT_ID: ${{ secrets.PROJECT_ID }}
           BQ_DATASET_ID: financial_${{ inputs.environment }}
-        run: python src/externalScripts/build-metadata.py
+        run: |
+          echo "Setting up Python Virtual Environment..."
+          python -m venv .venv
+          source .venv/bin/activate
+          
+          echo "Installing dependencies..."
+          pip install google-cloud-bigquery pyyaml
+          
+          echo "Executing schema generator..."
+          python src/externalScripts/generate_yaml_schema.py
 
       - name: Schema readback
         run: cat tables.yaml

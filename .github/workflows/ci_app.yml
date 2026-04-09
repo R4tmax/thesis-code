@@ -19,8 +19,18 @@ jobs:
       - name: Verify Py version
         run: python --version
 
-      - name: Install Linter (Ruff)
-        run: pip install ruff
-
-      - name: Run Ruff Linter
-        run: ruff check src/ --output-format=github
+      # Note, as covered in the main text
+      # self hosted runners used in the work run
+      # on CachyOS, which uses Arch as upstream
+      # Arch limits global pip installs to protect OS stability
+      - name: Install and Run Ruff (venv)
+        run: |
+          echo "Setting up Virtual Environment..."
+          python -m venv .venv
+          source .venv/bin/activate
+          
+          echo "Installing Ruff..."
+          pip install ruff
+          
+          echo "Linting source code..."
+          ruff check src/ --output-format=github

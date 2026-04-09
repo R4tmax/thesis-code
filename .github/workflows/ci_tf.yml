@@ -92,6 +92,10 @@ jobs:
           run: |
             mkdir -p policy-library/policies/constraints
             cp policy-library/samples/* policy-library/policies/constraints/ 2>/dev/null || true
+            
+            # Delete Google's broken sample files that crash the validator
+            rm -f policy-library/policies/constraints/compute_enable_oslogin_project.yaml
+            rm -f policy-library/policies/constraints/gke_enable_binauthz.yaml
 
         - name: Run gcloud terraform vet
           run: |

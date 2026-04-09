@@ -27,7 +27,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.14'
 
       - name: Install Python Dependencies
         run: pip install pandas faker
@@ -81,7 +81,7 @@ jobs:
       - name: Set up Python for metadata gen
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.14'
 
       - name: Install Schema Generator Dependencies
         run: pip install google-cloud-bigquery pyyaml

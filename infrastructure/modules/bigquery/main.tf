@@ -1,5 +1,5 @@
 resource "google_bigquery_dataset" "main" {
-  dataset_id    = "my_app_data_${var.environment}"
+  dataset_id    = "financial_${var.environment}"
   friendly_name = "Main Application Dataset"
   description   = "Dataset for the ${var.environment} environment"
   location      = var.location

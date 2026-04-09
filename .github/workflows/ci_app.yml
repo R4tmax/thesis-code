@@ -1,12 +1,36 @@
-name: 'App CI Module'
+name: 'App CI'
 
 on:
   workflow_call:
 
 jobs:
   validate_source_code:
-    name: 'Lint Application Code'
+    name: 'Ruff linter'
     runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
-      - run: echo "Linting application code..."
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+#      - name: Set up Python
+#        uses: actions/setup-python@v5
+#        with:
+#          python-version: '3.14'
+
+      - name: Verify Py version
+        run: python --version
+
+      # Note, as covered in the main text
+      # self hosted runners used in the work run
+      # on CachyOS, which uses Arch as upstream
+      # Arch limits global pip installs to protect OS stability
+      - name: Install and Run Ruff (venv)
+        run: |
+          echo "Setting up Virtual Environment..."
+          python -m venv .venv
+          source .venv/bin/activate
+          
+          echo "Installing Ruff..."
+          pip install ruff
+          
+          echo "Linting source code..."
+          ruff check src/ --output-format=github

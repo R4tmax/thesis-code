@@ -41,7 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run tfsec with PR comments
+      - name: Run tfsec
         uses: aquasecurity/tfsec-action@v1.0.3
         with:
           soft_fail: true
@@ -92,12 +92,16 @@ jobs:
           run: |
             mkdir -p policy-library/policies/constraints
             cp policy-library/samples/* policy-library/policies/constraints/ 2>/dev/null || true
+            
+            # Delete Google's broken sample files that crash the validator
+            rm -f policy-library/policies/constraints/compute_enable_oslogin_project.yaml
+            rm -f policy-library/policies/constraints/gke_enable_binauthz.yaml
 
         - name: Run gcloud terraform vet
           run: |
             gcloud beta terraform vet tfplan.json \
               --policy-library=policy-library \
-              --project=${{ inputs.project_id }} \
+              --project=${{ secrets.project_id }} \
               > vet_results.txt 2>&1 || true
 
         - name: Post Plan and Vet Results to PR

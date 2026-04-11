@@ -1,11 +1,9 @@
-# 1. Service Account for the App
 resource "google_service_account" "app_sa" {
   account_id   = "${var.app_name}-sa-${var.environment}"
   display_name = "SA for ${var.app_name} in ${var.environment}"
   project      = var.project_id
 }
 
-# 2. IAM Roles for the App SA
 resource "google_project_iam_member" "vertex_user" {
   project = var.project_id
   role    = "roles/aiplatform.user"
@@ -25,13 +23,11 @@ resource "google_bigquery_dataset_iam_member" "bq_data_viewer" {
   member     = "serviceAccount:${google_service_account.app_sa.email}"
 }
 
-# 3. Secret Manager (Read-Only Data Fetch)
 data "google_secret_manager_secret" "oauth_client_secret" {
   secret_id = "${var.app_name}-oauth-secret-${var.environment}"
   project   = var.project_id
 }
 
-# Grant the App SA permission to read this specific secret
 resource "google_secret_manager_secret_iam_member" "secret_accessor" {
   project   = var.project_id
   secret_id = data.google_secret_manager_secret.oauth_client_secret.id
@@ -39,7 +35,6 @@ resource "google_secret_manager_secret_iam_member" "secret_accessor" {
   member    = "serviceAccount:${google_service_account.app_sa.email}"
 }
 
-# 4. The Cloud Run Service (The Empty Shell)
 resource "google_cloud_run_v2_service" "app_service" {
   name     = "${var.app_name}-${var.environment}"
   location = var.location
@@ -67,7 +62,6 @@ resource "google_cloud_run_v2_service" "app_service" {
         name = "GOOGLE_OAUTH_CLIENT_SECRET"
         value_source {
           secret_key_ref {
-            # References the data block we defined above
             secret  = data.google_secret_manager_secret.oauth_client_secret.secret_id
             version = "latest"
           }
@@ -88,7 +82,6 @@ resource "google_cloud_run_v2_service" "app_service" {
   }
 }
 
-# Make it public
 resource "google_cloud_run_v2_service_iam_member" "public" {
   project  = google_cloud_run_v2_service.app_service.project
   location = google_cloud_run_v2_service.app_service.location

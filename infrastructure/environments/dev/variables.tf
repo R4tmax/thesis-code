@@ -10,6 +10,16 @@ variable "oauth_client_id" {
   sensitive   = true # Keeps it hidden in CLI output!
 }
 
+variable "default_labels" {
+  description = "A standard set of labels to apply to all resources"
+  type        = map(string)
+  default = {
+    managed_by  = "terraform"
+    project     = "thesis"
+    environment = "dev"
+  }
+}
+
 #variable "dev-proj_designation" {
 #  type        = string
 #  default     = "kadm09-thesis"

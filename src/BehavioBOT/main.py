@@ -200,7 +200,8 @@ LOCATION = os.getenv("GCP_VERTEX_LOCATION", "europe-west3")
 vertexai.init(project=PROJECT_ID, location=LOCATION, credentials=credentials)
 bq_client = bigquery.Client(project=PROJECT_ID, credentials=credentials)
 
-gemini_model = GenerativeModel("gemini-2.0-flash-001")
+# gemini_model = GenerativeModel("gemini-2.0-flash-001")
+gemini_model = GenerativeModel("gemini-2.5-flash")
 
 
 # === 2.5 Načti schéma a popisy tabulek z YAML ===

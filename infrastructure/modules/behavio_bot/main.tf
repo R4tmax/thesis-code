@@ -67,6 +67,10 @@ resource "google_cloud_run_v2_service" "app_service" {
           }
         }
       }
+      env {
+        name  = "GOOGLE_OAUTH_REDIRECT_URI"
+        value = var.oauth_redirect_uri
+      }
       ports {
         container_port = 8501
       }

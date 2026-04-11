@@ -2,10 +2,6 @@ resource "google_service_account" "app_sa" {
   account_id   = "${var.app_name}-sa-${var.environment}"
   display_name = "SA for ${var.app_name} in ${var.environment}"
   project      = var.project_id
-
-  labels = {
-    component = "behavio-bot"
-  }
 }
 
 resource "google_project_iam_member" "vertex_user" {

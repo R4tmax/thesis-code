@@ -20,3 +20,8 @@ variable "dataset_id" {
 variable "oauth_client_id" {
   type = string
 }
+
+variable "oauth_redirect_uri" {
+  description = "Google Oauth Client redirect URI, requires either custom domain or bootstrap"
+  type        = string
+}

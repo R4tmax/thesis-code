@@ -41,6 +41,7 @@ module "nlp_app" {
   location    = "europe-west3"
   app_name    = "behavio-bot"
 
-  dataset_id      = module.bigquery_database.dataset_id
-  oauth_client_id = var.oauth_client_id
+  dataset_id         = module.bigquery_database.dataset_id
+  oauth_client_id    = var.oauth_client_id
+  oauth_redirect_uri = "https://behavio-bot-dev-1083167021866.europe-west3.run.app"
 }

@@ -32,5 +32,36 @@ jobs:
           echo "Installing Ruff..."
           pip install ruff
           
-          echo "Linting source code..."
-          ruff check src/ --output-format=github --exit-zero
+          echo "Linting source code (Non-Blocking)..."
+          ruff check src/ --output-format=github --exit-zero 
+
+  test_docker_build:
+    name: 'Test BehavioBot build'
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+#      - name: Generate requirements.txt (uv)
+#        run: |
+#          echo "Setting up temporary venv for uv..."
+#          python -m venv .venv-uv
+#          source .venv-uv/bin/activate
+#
+#          echo "Installing uv..."
+#          pip install uv
+#
+#          echo "Translating uv.lock into requirements.txt..."
+#          uv export --format requirements-txt --no-hashes > src/BehavioBOT/requirements.txt
+#
+#          deactivate
+
+      - name: Mock dynamic files
+        run: |
+          echo "Creating dummy tables.yaml for build context..."
+          touch src/BehavioBOT/tables.yaml
+
+      - name: Dry-Run Docker Build
+        run: |
+          echo "Testing Docker build compilation..."
+          docker build -t behavio-bot-test-build ./src/BehavioBOT

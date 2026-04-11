@@ -186,7 +186,8 @@ if "last_query_summary" not in st.session_state:
 try:
     SCOPES = [
         "https://www.googleapis.com/auth/drive",
-        "https://www.googleapis.com/auth/bigquery"
+        "https://www.googleapis.com/auth/bigquery",
+        "https://www.googleapis.com/auth/cloud-platform"
     ]
     credentials, _ = google.auth.default(scopes=SCOPES)
 except Exception as e:

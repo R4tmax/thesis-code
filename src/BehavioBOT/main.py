@@ -15,6 +15,7 @@ from google.oauth2 import service_account
 import json
 import sys
 from langdetect import detect
+import google.auth
 
 def get_lang(text):
     try:
@@ -176,15 +177,27 @@ LOCATION = os.getenv("GCP_VERTEX_LOCATION")
 vertexai.init(project=PROJECT_ID, location=LOCATION)
 
 # === 2. Inicializace klientů ===
-SCOPES = [
-    "https://www.googleapis.com/auth/drive",
-    "https://www.googleapis.com/auth/bigquery"
-]
 
-credentials = service_account.Credentials.from_service_account_file(
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"],
-    scopes=SCOPES
-)
+
+# === 1. Inicializace GCP Pověření ===
+# google.auth.default() je "magická" funkce.
+# Lokálně: Najde váš JSON soubor v proměnné GOOGLE_APPLICATION_CREDENTIALS.
+# Produkce: Ignoruje chybějící proměnnou a použije Service Account z Cloud Run.
+try:
+    SCOPES = [
+        "https://www.googleapis.com/auth/drive",
+        "https://www.googleapis.com/auth/bigquery"
+    ]
+    credentials, _ = google.auth.default(scopes=SCOPES)
+except Exception as e:
+    st.error(f"❌ Nepodařilo se načíst Google Credentials: {e}")
+    st.stop()
+
+PROJECT_ID = os.getenv("GCP_PROJECT_ID")
+LOCATION = os.getenv("GCP_VERTEX_LOCATION", "europe-west3")
+
+# === 2. Inicializace klientů ===
+vertexai.init(project=PROJECT_ID, location=LOCATION, credentials=credentials)
 bq_client = bigquery.Client(project=PROJECT_ID, credentials=credentials)
 
 gemini_model = GenerativeModel("gemini-2.0-flash-001")

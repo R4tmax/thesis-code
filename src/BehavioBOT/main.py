@@ -167,16 +167,16 @@ if "last_query_result" not in st.session_state:
 if "last_query_summary" not in st.session_state:
     st.session_state.last_query_summary = None
 
-# === 1. Načtení .env a přihlašovacích údajů ===
-if "GOOGLE_APPLICATION_CREDENTIALS" not in os.environ:
-    st.error("❌ Proměnná prostředí GOOGLE_APPLICATION_CREDENTIALS není nastavena.")
-    st.stop()
-
-PROJECT_ID = os.getenv("GCP_PROJECT_ID")
-LOCATION = os.getenv("GCP_VERTEX_LOCATION")
-vertexai.init(project=PROJECT_ID, location=LOCATION)
-
-# === 2. Inicializace klientů ===
+# # === 1. Načtení .env a přihlašovacích údajů ===
+# if "GOOGLE_APPLICATION_CREDENTIALS" not in os.environ:
+#     st.error("❌ Proměnná prostředí GOOGLE_APPLICATION_CREDENTIALS není nastavena.")
+#     st.stop()
+#
+# PROJECT_ID = os.getenv("GCP_PROJECT_ID")
+# LOCATION = os.getenv("GCP_VERTEX_LOCATION")
+# vertexai.init(project=PROJECT_ID, location=LOCATION)
+#
+# # === 2. Inicializace klientů ===
 
 
 # === 1. Inicializace GCP Pověření ===

@@ -1,6 +1,7 @@
 provider "google" {
-  project = var.dev_proj_id
-  region  = "europe-west3"
+  project        = var.dev_proj_id
+  region         = "europe-west3"
+  default_labels = var.default_labels
 }
 
 module "state_bucket" {
@@ -9,6 +10,12 @@ module "state_bucket" {
   project_id  = var.dev_proj_id
   bucket_name = "${var.dev_proj_id}_state_bucket"
   location    = "EUROPE-WEST3"
+}
+
+resource "google_project_service" "vertex_ai" {
+  project            = var.dev_proj_id
+  service            = "aiplatform.googleapis.com"
+  disable_on_destroy = false
 }
 
 module "bigquery_database" {
@@ -22,7 +29,6 @@ module "bigquery_database" {
   deletion_protection        = false
 }
 
-# 1. Artifact Registry for the Dev Environment Docker Images
 resource "google_artifact_registry_repository" "app_registry" {
   provider      = google
   project       = var.dev_proj_id
@@ -30,11 +36,14 @@ resource "google_artifact_registry_repository" "app_registry" {
   repository_id = "behavio-repo-dev"
   description   = "Docker repository for the Behavio MVP"
   format        = "DOCKER"
+  labels = {
+    component = "behavio-bot"
+  }
 }
 
-# 2. The App Infrastructure
 module "nlp_app" {
-  source = "../../modules/behavio_bot"
+  source     = "../../modules/behavio_bot"
+  depends_on = [google_project_service.vertex_ai]
 
   project_id  = var.dev_proj_id
   environment = "dev"
@@ -47,3 +56,4 @@ module "nlp_app" {
   whitelisted_emails  = "kadlec.m.90@gmail.com,kadm09@vse.cz"
   whitelisted_domains = "behavio.cz,behaviolabs.cz"
 }
+

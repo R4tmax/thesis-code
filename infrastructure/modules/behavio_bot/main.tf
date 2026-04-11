@@ -92,6 +92,9 @@ resource "google_cloud_run_v2_service" "app_service" {
       client_version
     ]
   }
+  labels = {
+    component = "behavio-bot"
+  }
 }
 
 resource "google_cloud_run_v2_service_iam_member" "public" {

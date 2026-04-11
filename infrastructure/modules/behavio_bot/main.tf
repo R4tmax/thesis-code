@@ -10,6 +10,12 @@ resource "google_project_iam_member" "vertex_user" {
   member  = "serviceAccount:${google_service_account.app_sa.email}"
 }
 
+resource "google_project_iam_member" "bq_read_session_user" {
+  project = var.project_id
+  role    = "roles/bigquery.readSessionUser"
+  member  = "serviceAccount:${google_service_account.app_sa.email}"
+}
+
 resource "google_project_iam_member" "bq_job_user" {
   project = var.project_id
   role    = "roles/bigquery.jobUser"

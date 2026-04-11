@@ -71,6 +71,14 @@ resource "google_cloud_run_v2_service" "app_service" {
         name  = "GOOGLE_OAUTH_REDIRECT_URI"
         value = var.oauth_redirect_uri
       }
+      env {
+        name  = "WHITELISTED_EMAILS"
+        value = var.whitelisted_emails
+      }
+      env {
+        name  = "WHITELISTED_DOMAINS"
+        value = var.whitelisted_domains
+      }
       ports {
         container_port = 8501
       }

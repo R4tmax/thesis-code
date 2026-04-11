@@ -45,8 +45,6 @@ resource "google_project_iam_member" "sa_impersonation_role" {
   member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
 }
 
-
-
 resource "google_storage_bucket_iam_member" "sa_state_bucket_admin" {
   bucket = "thesis-kadm09-dev_state_bucket"
   role   = "roles/storage.objectAdmin"
@@ -56,6 +54,18 @@ resource "google_storage_bucket_iam_member" "sa_state_bucket_admin" {
 resource "google_project_iam_member" "sa_bigquery_admin" {
   project = var.dev_proj_id
   role    = "roles/bigquery.admin"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+resource "google_project_iam_member" "sa_service_usage_admin" {
+  project = var.dev_proj_id
+  role    = "roles/serviceusage.serviceUsageAdmin"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+resource "google_project_iam_member" "sa_storage_admin" {
+  project = var.dev_proj_id
+  role    = "roles/storage.admin"
   member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
 }
 

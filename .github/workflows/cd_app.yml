@@ -74,7 +74,7 @@ jobs:
     runs-on: self-hosted
     env:
       REGION: europe-west3
-      REPO_NAME: behavio-bot-repo-${{ inputs.environment }}
+      REPO_NAME: behavio-repo-${{ inputs.environment }}
       APP_NAME: behavio-bot-${{ inputs.environment }}
       IMAGE_TAG: ${{ github.sha }}
 

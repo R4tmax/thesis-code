@@ -107,7 +107,7 @@ jobs:
           GCP_PROJECT_ID: ${{ secrets.PROJECT_ID }}
           BQ_DATASET_ID: financial_${{ inputs.environment }}
         run: |
-          echo "Setting up Python Virtual Environment..."
+          echo "Setting up venv..."
           python -m venv .venv
           source .venv/bin/activate
           
@@ -127,8 +127,11 @@ jobs:
         run: |
           IMAGE_URL=${{ env.REGION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
           
+          echo "Moving tables.yaml into the Docker build context..."
+          mv tables.yaml src/BehavioBOT/tables.yaml
+          
           echo "Building image: $IMAGE_URL"
-          docker build -t $IMAGE_URL . 
+          docker build -t $IMAGE_URL ./src/BehavioBOT
           
           echo "Pushing image to Artifact Registry..."
           docker push $IMAGE_URL

@@ -109,7 +109,7 @@ resource "google_cloudfunctions2_function" "alerting_function" {
     available_memory      = "256M"
     timeout_seconds       = 60
     service_account_email = google_service_account.alert_sa.email
-    
+
     environment_variables = {
       PROJECT_ID      = var.project_id
       GCS_BUCKET_NAME = google_storage_bucket.config_bucket.name

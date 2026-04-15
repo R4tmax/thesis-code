@@ -58,14 +58,14 @@ module "nlp_app" {
 }
 
 module "dev_mailgun_dns" {
-  depends_on=[module.alerting_app] # requires the SA allocation from the alerting module
-  source = "../../modules/mailgun_dns"
+  depends_on = [module.alerting_app] # requires the SA allocation from the alerting module
+  source     = "../../modules/mailgun_dns"
 
-  project_id       = "thesis-kadm09-dev"
-  zone_name        = "martinkadlec-dev-zone"
-  domain_name      = "dev.martinkadlec.dev." # note the trailing dot, change the URL between ENVs
+  project_id  = "thesis-kadm09-dev"
+  zone_name   = "martinkadlec-dev-zone"
+  domain_name = "dev.martinkadlec.dev." # note the trailing dot, change the URL between ENVs
   environment = "dev"
-  description      = "DNS zone for usage for Mailgun API client"
+  description = "DNS zone for usage for Mailgun API client"
 }
 
 

@@ -44,7 +44,7 @@ resource "google_dns_record_set" "mailgun_mx" {
   name         = "mg.${google_dns_managed_zone.mailgun_dns_zone.dns_name}"
   type         = "MX"
   ttl          = 300
-  rrdatas      = [
+  rrdatas = [
     "10 mxa.eu.mailgun.org.",
     "10 mxb.eu.mailgun.org."
   ]
@@ -57,5 +57,5 @@ resource "google_dns_record_set" "mailgun_dkim" {
   name         = "mta._domainkey.mg.${google_dns_managed_zone.mailgun_dns_zone.dns_name}"
   type         = "TXT"
   ttl          = 300
-  rrdatas      = ["\"k=rsa; p=${var.mailgun_dkim_key}\""] 
+  rrdatas      = ["\"k=rsa; p=${var.mailgun_dkim_key}\""]
 }

@@ -5,16 +5,9 @@ resource "google_dns_managed_zone" "mailgun_dns_zone" {
   description = var.description
 }
 
-data "google_secret_manager_secret" "mailgun_dkim_secret" {
-  secret_id = "mailgun-dkim-${var.environment}"
-  project   = var.project_id
-}
-
-resource "google_secret_manager_secret_iam_member" "dkim_accessor" {
-  project   = var.project_id
-  secret_id = data.google_secret_manager_secret.mailgun_dkim_secret.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:sa-alerting-${var.environment}"
+data "google_secret_manager_secret_version" "mailgun_dkim_payload" {
+  project = var.project_id
+  secret  = "mailgun-dkim-${var.environment}"
 }
 
 # CNAME Record
@@ -57,5 +50,6 @@ resource "google_dns_record_set" "mailgun_dkim" {
   name         = "mta._domainkey.mg.${google_dns_managed_zone.mailgun_dns_zone.dns_name}"
   type         = "TXT"
   ttl          = 300
-  rrdatas      = ["\"k=rsa; p=${var.mailgun_dkim_key}\""]
+
+  rrdatas = ["\"k=rsa; p=${data.google_secret_manager_secret_version.mailgun_dkim_payload.secret_data}\""]
 }

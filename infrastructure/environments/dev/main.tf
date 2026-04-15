@@ -98,5 +98,4 @@ module "alerting_app" {
   project_id  = "thesis-kadm09-dev"
   environment = "dev"
   region      = "europe-west3"
-  source_dir  = "${path.module}/../../../src/automatedAlerting"
 }

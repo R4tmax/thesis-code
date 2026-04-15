@@ -47,10 +47,8 @@ resource "google_secret_manager_secret_iam_member" "domain_accessor" {
 }
 
 # ==========================================
-# 2. STORAGE (Config & Source Code)
+# 2. STORAGE (Config & Dummy Source)
 # ==========================================
-
-# Config Bucket
 resource "google_storage_bucket" "config_bucket" {
   project                     = var.project_id
   name                        = "${var.project_id}-alerting-config-${var.environment}"
@@ -58,13 +56,6 @@ resource "google_storage_bucket" "config_bucket" {
   uniform_bucket_level_access = true
 }
 
-resource "google_storage_bucket_iam_member" "config_reader" {
-  bucket = google_storage_bucket.config_bucket.name
-  role   = "roles/storage.objectViewer"
-  member = "serviceAccount:${google_service_account.alert_sa.email}"
-}
-
-# Source Code Bucket & Auto-Zipping
 resource "google_storage_bucket" "source_bucket" {
   project                     = var.project_id
   name                        = "${var.project_id}-alerting-source-${var.environment}"
@@ -72,16 +63,20 @@ resource "google_storage_bucket" "source_bucket" {
   uniform_bucket_level_access = true
 }
 
-data "archive_file" "function_zip" {
+data "archive_file" "dummy_source" {
   type        = "zip"
-  source_dir  = var.source_dir
-  output_path = "${path.module}/function_source.zip"
+  output_path = "${path.module}/dummy_bootstrap.zip"
+
+  source {
+    content  = "import functions_framework\n@functions_framework.http\ndef read_and_alert(request):\n    return 'Bootstrap OK'"
+    filename = "main.py"
+  }
 }
 
 resource "google_storage_bucket_object" "function_zip" {
-  name   = "source-${data.archive_file.function_zip.output_md5}.zip"
+  name   = "bootstrap-source.zip"
   bucket = google_storage_bucket.source_bucket.name
-  source = data.archive_file.function_zip.output_path
+  source = data.archive_file.dummy_source.output_path
 }
 
 # ==========================================
@@ -96,16 +91,11 @@ resource "google_cloudfunctions2_function" "alerting_function" {
   build_config {
     runtime     = "python312"
     entry_point = "read_and_alert"
-
     source {
       storage_source {
         bucket = google_storage_bucket.source_bucket.name
         object = google_storage_bucket_object.function_zip.name
       }
-    }
-
-    environment_variables = {
-      GOOGLE_FUNCTION_SOURCE = "read-and-alert.py"
     }
   }
 
@@ -120,6 +110,13 @@ resource "google_cloudfunctions2_function" "alerting_function" {
       GCS_BUCKET_NAME = google_storage_bucket.config_bucket.name
       GCS_BLOB_NAME   = "alert_definitions.yaml"
     }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      build_config[0].source,
+      build_config[0].environment_variables
+    ]
   }
 }
 

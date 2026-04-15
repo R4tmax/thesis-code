@@ -11,8 +11,3 @@ variable "environment" {
   type    = string
   default = "dev"
 }
-
-variable "source_dir" {
-  description = "Path to the Python source code directory"
-  type        = string
-}

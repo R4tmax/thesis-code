@@ -69,6 +69,24 @@ resource "google_project_iam_member" "sa_storage_admin" {
   member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
 }
 
+resource "google_project_iam_member" "sa_cloudfunctions_admin" {
+  project = var.dev_proj_id
+  role    = "roles/cloudfunctions.admin"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+resource "google_project_iam_member" "sa_dns_admin" {
+  project = var.dev_proj_id
+  role    = "roles/dns.admin"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+resource "google_project_iam_member" "sa_scheduler_admin" {
+  project = var.dev_proj_id
+  role    = "roles/cloudscheduler.admin"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
 resource "google_iam_workload_identity_pool" "github_pool" {
   workload_identity_pool_id = "github-actions-pool"
   display_name              = "GitHub Actions Pool"

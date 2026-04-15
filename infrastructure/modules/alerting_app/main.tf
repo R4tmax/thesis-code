@@ -93,7 +93,7 @@ resource "google_cloudfunctions2_function" "alerting_function" {
   name     = "behavio-alerting-${var.environment}"
   location = var.region
 
-build_config {
+  build_config {
     runtime     = "python312"
     entry_point = "read_and_alert"
 

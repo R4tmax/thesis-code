@@ -47,7 +47,7 @@ resource "google_secret_manager_secret_iam_member" "domain_accessor" {
 }
 
 # ==========================================
-# 2. STORAGE (Config & Dummy Source)
+# 2. STORAGE
 # ==========================================
 resource "google_storage_bucket" "config_bucket" {
   project                     = var.project_id
@@ -63,20 +63,11 @@ resource "google_storage_bucket" "source_bucket" {
   uniform_bucket_level_access = true
 }
 
-data "archive_file" "dummy_source" {
-  type        = "zip"
-  output_path = "${path.module}/dummy_bootstrap.zip"
-
-  source {
-    content  = "import functions_framework\n@functions_framework.http\ndef read_and_alert(request):\n    return 'Bootstrap OK'"
-    filename = "main.py"
-  }
-}
-
 resource "google_storage_bucket_object" "function_zip" {
   name   = "bootstrap-source.zip"
   bucket = google_storage_bucket.source_bucket.name
-  source = data.archive_file.dummy_source.output_path
+  # hardcoded bootstrap file
+  source = "${path.module}/dummy.zip"
 }
 
 # ==========================================

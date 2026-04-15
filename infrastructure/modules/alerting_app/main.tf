@@ -95,12 +95,17 @@ resource "google_cloudfunctions2_function" "alerting_function" {
 
   build_config {
     runtime     = "python312"
-    entry_point = "read-and-alert"
+    entry_point = "read_and_alert"
+
     source {
       storage_source {
         bucket = google_storage_bucket.source_bucket.name
         object = google_storage_bucket_object.function_zip.name
       }
+    }
+
+    environment_variables = {
+      GOOGLE_FUNCTION_SOURCE = "read-and-alert.py"
     }
   }
 

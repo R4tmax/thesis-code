@@ -16,3 +16,16 @@ resource "google_bigquery_table" "invoices_table" {
   deletion_protection = var.deletion_protection
 
 }
+
+resource "google_bigquery_table" "alert_view" {
+  dataset_id = google_bigquery_dataset.main.dataset_id
+  table_id   = "view_alert_total_invoices"
+  project    = var.project_id
+
+  deletion_protection = false
+
+  view {
+    query          = "SELECT * FROM `${var.project_id}.${google_bigquery_dataset.main.dataset_id}.${google_bigquery_table.invoices_table.table_id}`"
+    use_legacy_sql = false
+  }
+}

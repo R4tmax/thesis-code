@@ -145,3 +145,31 @@ jobs:
             --region ${{ env.REGION }} \
             --project ${{ secrets.PROJECT_ID }} \
             --quiet
+
+  deploy_alerting_config:
+      name: 'Deploy alerting config (${{ inputs.environment }})'
+      runs-on: self-hosted
+      steps:
+        - name: Checkout Code
+          uses: actions/checkout@v4
+
+        - name: Authenticate to GCP
+          uses: google-github-actions/auth@v2
+          with:
+            workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+            service_account: ${{ secrets.CICD_SA }}
+
+        - name: Set up Cloud SDK
+          uses: google-github-actions/setup-gcloud@v2
+
+        - name: Upload Alert Definitions to GCS
+          run: |
+            # Calculate the exact bucket name based on your Terraform configuration
+            BUCKET_NAME="${{ secrets.PROJECT_ID }}-alerting-config-${{ inputs.environment }}"
+            
+            echo "Syncing alert_definitions.yaml to gs://$BUCKET_NAME/..."
+            
+            # We use gcloud storage cp to push the file to the bucket
+            gcloud storage cp src/automatedAlerting/alert_definitions.yaml gs://$BUCKET_NAME/alert_definitions.yaml
+            
+            echo "Alert definitions updated successfully!"

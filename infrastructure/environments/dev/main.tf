@@ -57,3 +57,28 @@ module "nlp_app" {
   whitelisted_domains = "behavio.cz,behaviolabs.cz"
 }
 
+module "dev_mailgun_dns" {
+  depends_on=[module.alerting_app] # requires the SA allocation from the alerting module
+  source = "../../modules/mailgun_dns"
+
+  project_id       = "thesis-kadm09-dev"
+  zone_name        = "martinkadlec-dev-zone"
+  domain_name      = "dev.martinkadlec.dev." # note the trailing dot, change the URL between ENVs
+  environment = "dev"
+  description      = "DNS zone for usage for Mailgun API client"
+}
+
+
+output "dev_name_servers" {
+  description = "Values to be used as NS records at the core DNS registrar/zone"
+  value       = module.dev_mailgun_dns.name_servers
+}
+
+module "alerting_app" {
+  source = "../../modules/alerting_app"
+
+  project_id  = "thesis-kadm09-dev"
+  environment = "dev"
+  region      = "europe-west3"
+  source_dir  = "${path.module}/../../../src/automatedAlerting"
+}

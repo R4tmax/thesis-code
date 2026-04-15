@@ -178,8 +178,6 @@ jobs:
           run: |
             echo "Deploying Python code to Cloud Functions Gen 2..."
             
-            # We use gcloud to push the source directory directly to the function shell
-            # that Terraform bootstrapped.
             gcloud functions deploy behavio-alerting-${{ inputs.environment }} \
               --gen2 \
               --region=europe-west3 \
@@ -188,5 +186,6 @@ jobs:
               --entry-point=read_and_alert \
               --runtime=python312 \
               --service-account=sa-alerting-${{ inputs.environment }}@${{ secrets.PROJECT_ID }}.iam.gserviceaccount.com \
+              --set-build-env-vars=GOOGLE_FUNCTION_SOURCE="read-and-alert.py" \
               --set-env-vars=PROJECT_ID=${{ secrets.PROJECT_ID }},GCS_BUCKET_NAME=${{ secrets.PROJECT_ID }}-alerting-config-${{ inputs.environment }},GCS_BLOB_NAME=alert_definitions.yaml \
               --quiet

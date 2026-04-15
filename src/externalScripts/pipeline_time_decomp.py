@@ -1,6 +1,8 @@
 import subprocess
 import requests
-import re
+import pandas as pd
+import plotly.express as px
+from datetime import datetime
 
 
 def get_gh_token():
@@ -15,12 +17,12 @@ def get_gh_token():
 # ==========================================
 # CONFIGURATION
 # ==========================================
-OWNER = "R4tmax"  # Extracted from your CLI output
-REPO = "thesis-code"  # Extracted from your CLI output
+OWNER = "R4tmax"
+REPO = "thesis-code"
 TOKEN = get_gh_token()
 CI_WORKFLOW = "CI Orchestrator"
 CD_WORKFLOW = "CD Orchestrator"
-RUN_LIMIT = 5  # Number of pairs to graph
+RUN_LIMIT = 1  # Let's just generate the absolute latest composite run
 
 HEADERS = {
     "Authorization": f"Bearer {TOKEN}",
@@ -39,7 +41,6 @@ def get_workflow_id(workflow_name):
 
 
 def get_successful_runs(wf_id, limit=30):
-    # Fetch a slightly larger pool to ensure we find matches
     url = f"https://api.github.com/repos/{OWNER}/{REPO}/actions/workflows/{wf_id}/runs"
     params = {"status": "success", "per_page": limit}
     response = requests.get(url, headers=HEADERS, params=params)
@@ -55,10 +56,8 @@ def get_jobs(run_id):
 
 
 def clean_job_name(raw_name):
-    """Simplifies the job name for the Gantt chart."""
     clean = raw_name.split('/')[-1]
-    clean = clean.replace("(dev)", "").strip()
-    return clean
+    return clean.replace("(dev)", "").strip()
 
 
 def main():
@@ -69,7 +68,7 @@ def main():
     cd_id = get_workflow_id(CD_WORKFLOW)
 
     if not ci_id or not cd_id:
-        print("❌ Error: Could not find workflow IDs. Check OWNER and REPO names.")
+        print("❌ Error: Could not find workflows.")
         return
 
     print("Fetching Runs...")
@@ -85,10 +84,8 @@ def main():
         branch = ci_run["head_branch"]
         matching_cd_run = None
 
-        # Look for the CI branch name inside the CD's display_title (Commit message)
         for cd_run in cd_runs:
-            title = cd_run.get("display_title", "")
-            if branch in title:
+            if branch in cd_run.get("display_title", ""):
                 matching_cd_run = cd_run
                 break
 
@@ -97,41 +94,79 @@ def main():
 
         pairs_found += 1
 
-        print(f"\n{'=' * 70}")
-        print(f" 📊 COMPOSITE PIPELINE (Branch: {branch})")
-        print(f" CI Run: {ci_run['id']} | CD Run: {matching_cd_run['id']}")
-        print(f"{'=' * 70}")
+        print(f"\nProcessing Composite Pipeline for branch: {branch}...")
 
         ci_jobs = get_jobs(ci_run["id"])
         cd_jobs = get_jobs(matching_cd_run["id"])
 
-        mermaid_lines = []
+        plot_data = []
 
-        # --- PROCESS CI JOBS ---
-        mermaid_lines.append(f"    section {CI_WORKFLOW}")
+        # Process CI Jobs
         for job in ci_jobs:
             if job.get("conclusion") == "skipped" or not job.get("started_at"): continue
-            name = clean_job_name(job["name"])
-            safe_id = "ci_" + re.sub(r'[^a-zA-Z0-9]', '', name)
-            mermaid_lines.append(f"    {name} : {safe_id}, {job['started_at']}, {job['completed_at']}")
 
-        # --- PROCESS CD JOBS ---
-        mermaid_lines.append(f"    section {CD_WORKFLOW}")
+            # Calculate duration for the hover text
+            fmt = "%Y-%m-%dT%H:%M:%SZ"
+            t_start = datetime.strptime(job['started_at'], fmt)
+            t_end = datetime.strptime(job['completed_at'], fmt)
+            duration_sec = int((t_end - t_start).total_seconds())
+
+            plot_data.append(dict(
+                Task=f"[CI] {clean_job_name(job['name'])}",
+                Start=job['started_at'],
+                Finish=job['completed_at'],
+                Stage="1. CI Pipeline",
+                Duration=f"{duration_sec} seconds"
+            ))
+
+        # Process CD Jobs
         for job in cd_jobs:
             if job.get("conclusion") == "skipped" or not job.get("started_at"): continue
-            name = clean_job_name(job["name"])
-            safe_id = "cd_" + re.sub(r'[^a-zA-Z0-9]', '', name)
-            mermaid_lines.append(f"    {name} : {safe_id}, {job['started_at']}, {job['completed_at']}")
 
-        # --- OUTPUT COMPOSITE MERMAID ---
-        print("\n```mermaid")
-        print("gantt")
-        print(f"    title Full Deployment Lifecycle ({branch})")
-        print("    dateFormat  YYYY-MM-DDTHH:mm:ssZ")
-        print("    axisFormat  %H:%M:%S")
-        for line in mermaid_lines:
-            print(line)
-        print("```\n")
+            fmt = "%Y-%m-%dT%H:%M:%SZ"
+            t_start = datetime.strptime(job['started_at'], fmt)
+            t_end = datetime.strptime(job['completed_at'], fmt)
+            duration_sec = int((t_end - t_start).total_seconds())
+
+            plot_data.append(dict(
+                Task=f"[CD] {clean_job_name(job['name'])}",
+                Start=job['started_at'],
+                Finish=job['completed_at'],
+                Stage="2. CD Pipeline",
+                Duration=f"{duration_sec} seconds"
+            ))
+
+        # --- BUILD THE PLOTLY GRAPH ---
+        df = pd.DataFrame(plot_data)
+
+        # Sort so the earliest jobs appear at the top of the graph
+        df = df.sort_values(by="Start")
+
+        fig = px.timeline(
+            df,
+            x_start="Start",
+            x_end="Finish",
+            y="Task",
+            color="Stage",
+            title=f"Full Deployment Lifecycle: {branch} (Runs {ci_run['id']} -> {matching_cd_run['id']})",
+            hover_data=["Duration"],
+            color_discrete_sequence=["#2ca02c", "#1f77b4"]  # Green for CI, Blue for CD
+        )
+
+        # Invert the Y-axis so the first task is at the top
+        fig.update_yaxes(autorange="reversed")
+
+        # Make the layout cleaner for an academic paper
+        fig.update_layout(
+            font=dict(family="Arial", size=12),
+            showlegend=True,
+            title_x=0.5  # Center the title
+        )
+
+        # Save to an interactive HTML file
+        filename = f"pipeline_timeline_{branch}.html"
+        fig.write_html(filename)
+        print(f"✅ Success! Open '{filename}' in your web browser.")
 
 
 if __name__ == "__main__":

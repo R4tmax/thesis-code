@@ -173,3 +173,20 @@ jobs:
             gcloud storage cp src/automatedAlerting/alert_definitions.yaml gs://$BUCKET_NAME/alert_definitions.yaml
             
             echo "Alert definitions updated successfully!"
+
+        - name: Deploy Alerting Cloud Function
+          run: |
+            echo "Deploying Python code to Cloud Functions Gen 2..."
+            
+            # We use gcloud to push the source directory directly to the function shell
+            # that Terraform bootstrapped.
+            gcloud functions deploy behavio-alerting-${{ inputs.environment }} \
+              --gen2 \
+              --region=europe-west3 \
+              --project=${{ secrets.PROJECT_ID }} \
+              --source=src/automatedAlerting \
+              --entry-point=read_and_alert \
+              --runtime=python312 \
+              --service-account=sa-alerting-${{ inputs.environment }}@${{ secrets.PROJECT_ID }}.iam.gserviceaccount.com \
+              --set-env-vars=PROJECT_ID=${{ secrets.PROJECT_ID }},GCS_BUCKET_NAME=${{ secrets.PROJECT_ID }}-alerting-config-${{ inputs.environment }},GCS_BLOB_NAME=alert_definitions.yaml \
+              --quiet

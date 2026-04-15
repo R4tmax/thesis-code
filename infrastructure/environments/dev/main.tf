@@ -12,14 +12,34 @@ module "state_bucket" {
   location    = "EUROPE-WEST3"
 }
 
-resource "google_project_service" "vertex_ai" {
-  project            = var.dev_proj_id
-  service            = "aiplatform.googleapis.com"
+locals {
+  required_apis = [
+    "aiplatform.googleapis.com",       # Vertex AI (Gemini models)
+    "dns.googleapis.com",              # Cloud DNS (For Mailgun delegation)
+    "storage.googleapis.com",          # Cloud Storage (State, Config, and Source buckets)
+    "bigquery.googleapis.com",         # BigQuery (Datasets, Tables, Views)
+    "artifactregistry.googleapis.com", # Artifact Registry (Docker images)
+    "run.googleapis.com",              # Cloud Run (NLP App + underlying Alerting compute)
+    "cloudfunctions.googleapis.com",   # Cloud Functions (Alerting App generation)
+    "cloudbuild.googleapis.com",       # Required by Cloud Functions to build your Python zip
+    "cloudscheduler.googleapis.com",   # Cloud Scheduler (Triggering the alerts)
+    "secretmanager.googleapis.com",    # Secret Manager (OAuth, Mailgun keys)
+    "iam.googleapis.com",              # IAM API (Creating Service Accounts and bindings)
+    "iamcredentials.googleapis.com",   # Required for Cloud Scheduler to generate OIDC tokens!
+  ]
+}
+
+resource "google_project_service" "enabled_apis" {
+  for_each = toset(local.required_apis)
+  project  = var.dev_proj_id
+  service  = each.key
+
   disable_on_destroy = false
 }
 
 module "bigquery_database" {
-  source = "../../modules/bigquery"
+  depends_on = [google_project_service.enabled_apis]
+  source     = "../../modules/bigquery"
 
   project_id  = var.dev_proj_id
   environment = "dev"
@@ -30,6 +50,7 @@ module "bigquery_database" {
 }
 
 resource "google_artifact_registry_repository" "app_registry" {
+  depends_on    = [google_project_service.enabled_apis]
   provider      = google
   project       = var.dev_proj_id
   location      = "europe-west3"
@@ -42,8 +63,9 @@ resource "google_artifact_registry_repository" "app_registry" {
 }
 
 module "nlp_app" {
+  depends_on = [google_project_service.enabled_apis]
   source     = "../../modules/behavio_bot"
-  depends_on = [google_project_service.vertex_ai]
+
 
   project_id  = var.dev_proj_id
   environment = "dev"
@@ -57,3 +79,24 @@ module "nlp_app" {
   whitelisted_domains = "behavio.cz,behaviolabs.cz"
 }
 
+module "dev_mailgun_dns" {
+  depends_on = [google_project_service.enabled_apis]
+  source     = "../../modules/mailgun_dns"
+
+  project_id  = "thesis-kadm09-dev"
+  zone_name   = "martinkadlec-dev-zone"
+  domain_name = "dev.martinkadlec.dev." # note the trailing dot, change the URL between ENVs
+  environment = "dev"
+  description = "DNS zone for usage for Mailgun API client"
+}
+
+
+module "alerting_app" {
+  depends_on = [google_project_service.enabled_apis]
+  source     = "../../modules/alerting_app"
+
+  project_id  = "thesis-kadm09-dev"
+  environment = "dev"
+  region      = "europe-west3"
+  source_dir  = "${path.module}/../../../src/automatedAlerting"
+}

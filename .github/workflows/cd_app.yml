@@ -146,8 +146,8 @@ jobs:
             --project ${{ secrets.PROJECT_ID }} \
             --quiet
 
-  deploy_alerting_config:
-      name: 'Deploy alerting config (${{ inputs.environment }})'
+  deploy_alerting_component:
+      name: 'Deploy alerting component (${{ inputs.environment }})'
       runs-on: self-hosted
       steps:
         - name: Checkout Code

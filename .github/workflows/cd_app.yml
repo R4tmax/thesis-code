@@ -186,5 +186,5 @@ jobs:
               --entry-point=read_and_alert \
               --runtime=python312 \
               --service-account=sa-alerting-${{ inputs.environment }}@${{ secrets.PROJECT_ID }}.iam.gserviceaccount.com \
-              --set-env-vars=PROJECT_ID=${{ secrets.PROJECT_ID }},GCS_BUCKET_NAME=${{ secrets.PROJECT_ID }}-alerting-config-${{ inputs.environment }},GCS_BLOB_NAME=alert_definitions.yaml \
+              --set-env-vars=PROJECT_ID=${{ secrets.PROJECT_ID }},ENVIRONMENT=${{ inputs.environment }},GCS_BUCKET_NAME=${{ secrets.PROJECT_ID }}-alerting-config-${{ inputs.environment }},GCS_BLOB_NAME=alert_definitions.yaml \
               --quiet

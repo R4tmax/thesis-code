@@ -27,6 +27,11 @@ logger = logging.getLogger(__name__)
 # SECRET MANAGER UTILITIES
 # ───────────────────────────────────────
 
+ENV = os.environ.get("ENVIRONMENT", "dev")
+
+MAILGUN_API_SECRET_ID = f"mailgun-api-{ENV}"
+MAILGUN_DOMAIN_SECRET_ID = f"mailgun-domain-{ENV}"
+
 def get_secret(secret_id: str) -> str:
     """Retrieve secret from Google Secret Manager."""
     try:
@@ -246,8 +251,8 @@ def render_email_template(template_name: str, context: dict) -> str:
 
 def send_email_mailgun(subject: str, recipients: list, html_body: str):
     """Send email via Mailgun API to multiple recipients."""
-    MAILGUN_API = get_secret("mailgun_api")
-    MAILGUN_DOMAIN = get_secret("mailgun_domain")
+    MAILGUN_API = get_secret(MAILGUN_API_SECRET_ID)
+    MAILGUN_DOMAIN = get_secret(MAILGUN_DOMAIN_SECRET_ID)
 
     for recipient in recipients:
         try:

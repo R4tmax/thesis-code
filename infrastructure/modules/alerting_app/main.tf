@@ -70,6 +70,12 @@ resource "google_storage_bucket_object" "function_zip" {
   source = "${path.module}/dummy.zip"
 }
 
+resource "google_storage_bucket_iam_member" "config_reader" {
+  bucket = google_storage_bucket.config_bucket.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${google_service_account.alert_sa.email}"
+}
+
 # ==========================================
 # 3. COMPUTE: CLOUD RUN FUNCTION
 # ==========================================

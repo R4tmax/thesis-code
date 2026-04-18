@@ -85,7 +85,7 @@ module "nlp_app" {
 
   dataset_id          = module.bigquery_database.dataset_id
   oauth_client_id     = var.oauth_client_id
-  oauth_redirect_uri  = "" # requires bootstrapping
+  oauth_redirect_uri  = "https://behavio-bot-prod-69996294373.europe-west3.run.app"
   whitelisted_emails  = "kadlec.m.90@gmail.com,kadm09@vse.cz"
   whitelisted_domains = "behavio.cz,behaviolabs.cz"
 }

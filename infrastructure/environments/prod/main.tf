@@ -65,7 +65,7 @@ resource "google_artifact_registry_repository" "app_registry" {
   provider      = google
   project       = var.proj_id
   location      = "europe-west3"
-  repository_id = "behavio-repo-dev"
+  repository_id = "behavio-repo-${var.environment_label}"
   description   = "Docker repository for the Behavio MVP"
   format        = "DOCKER"
   labels = {
@@ -85,17 +85,17 @@ module "nlp_app" {
 
   dataset_id          = module.bigquery_database.dataset_id
   oauth_client_id     = var.oauth_client_id
-  oauth_redirect_uri  = "https://behavio-bot-dev-1083167021866.europe-west3.run.app"
+  oauth_redirect_uri  = "" # requires bootstrapping
   whitelisted_emails  = "kadlec.m.90@gmail.com,kadm09@vse.cz"
   whitelisted_domains = "behavio.cz,behaviolabs.cz"
 }
 
-module "dev_mailgun_dns" {
+module "mailgun_dns" {
   depends_on = [google_project_service.enabled_apis]
   source     = "../../modules/mailgun_dns"
 
-  project_id  = "thesis-kadm09-dev"
-  zone_name   = "martinkadlec-dev-zone"
+  project_id  = var.proj_id
+  zone_name   = "martinkadlec-${var.environment_label}-zone"
   domain_name = "${var.environment_label}.martinkadlec.dev." # note the trailing dot, change the URL between ENVs
   environment = var.environment_label
   description = "DNS zone for usage for Mailgun API client"
@@ -106,7 +106,7 @@ module "alerting_app" {
   depends_on = [google_project_service.enabled_apis]
   source     = "../../modules/alerting_app"
 
-  project_id  = "thesis-kadm09-dev"
+  project_id  = var.proj_id
   environment = var.environment_label
   region      = "europe-west3"
 }

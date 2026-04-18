@@ -113,6 +113,7 @@ resource "google_cloudfunctions2_function" "alerting_function" {
       PROJECT_ID      = var.project_id
       GCS_BUCKET_NAME = google_storage_bucket.config_bucket.name
       GCS_BLOB_NAME   = "alert_definitions.yaml"
+      ENVIRONMENT     = var.environment
     }
   }
 
@@ -150,6 +151,9 @@ resource "google_cloud_scheduler_job" "trigger_job" {
 
     oidc_token {
       service_account_email = google_service_account.alert_sa.email
+      # GPC internal DBs normalize the URL with the trailing slash, this solution prevents TF
+      # from running rudimentary in place updates on the token
+      audience              = "${google_cloudfunctions2_function.alerting_function.service_config[0].uri}/"
     }
   }
 }
@@ -170,6 +174,9 @@ resource "google_cloud_scheduler_job" "report_job" {
 
     oidc_token {
       service_account_email = google_service_account.alert_sa.email
+      # GPC internal DBs normalize the URL with the trailing slash, this solution prevents TF
+      # from running rudimentary in place updates on the token
+      audience              = "${google_cloudfunctions2_function.alerting_function.service_config[0].uri}/"
     }
   }
 }

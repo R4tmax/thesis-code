@@ -101,7 +101,6 @@ module "mailgun_dns" {
   description = "DNS zone for usage for Mailgun API client"
 }
 
-
 module "alerting_app" {
   depends_on = [google_project_service.enabled_apis]
   source     = "../../modules/alerting_app"
@@ -109,9 +108,4 @@ module "alerting_app" {
   project_id  = var.proj_id
   environment = var.environment_label
   region      = "europe-west3"
-}
-
-import {
-  to = module.mailgun_dns.google_dns_managed_zone.mailgun_dns_zone
-  id = "projects/thesis-kadm09-dev/managedZones/martinkadlec-dev-zone"
 }

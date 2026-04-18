@@ -110,3 +110,8 @@ module "alerting_app" {
   environment = var.environment_label
   region      = "europe-west3"
 }
+
+import {
+  to = module.mailgun_dns.google_dns_managed_zone.mailgun_dns_zone
+  id = "projects/thesis-kadm09-dev/managedZones/martinkadlec-dev-zone"
+}

@@ -170,7 +170,7 @@ jobs:
             echo "Syncing alert_definitions.yaml to gs://$BUCKET_NAME/..."
             
             # We use gcloud storage cp to push the file to the bucket
-            gcloud storage cp src/automatedAlerting/alert_definitions.yaml gs://$BUCKET_NAME/alert_definitions.yaml
+            gcloud storage cp src/automatedAlerting/alert_definitions-${{ inputs.environment }}.yaml gs://$BUCKET_NAME/alert_definitions.yaml
             
             echo "Alert definitions updated successfully!"
 

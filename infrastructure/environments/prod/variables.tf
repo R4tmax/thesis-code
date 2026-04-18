@@ -20,6 +20,6 @@ variable "default_labels" {
   default = {
     managed_by  = "terraform"
     project     = "thesis"
-    environment = "dev"
+    environment = "prod"
   }
 }

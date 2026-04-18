@@ -1,6 +1,4 @@
-# ==========================================
 # 1. IDENTITY & IAM BINDINGS
-# ==========================================
 
 resource "google_service_account" "alert_sa" {
   project      = var.project_id
@@ -46,14 +44,16 @@ resource "google_secret_manager_secret_iam_member" "domain_accessor" {
   member    = "serviceAccount:${google_service_account.alert_sa.email}"
 }
 
-# ==========================================
 # 2. STORAGE
-# ==========================================
 resource "google_storage_bucket" "config_bucket" {
   project                     = var.project_id
   name                        = "${var.project_id}-alerting-config-${var.environment}"
   location                    = var.region
   uniform_bucket_level_access = true
+
+  labels = {
+    component = "custom-alerting"
+  }
 }
 
 resource "google_storage_bucket" "source_bucket" {
@@ -61,6 +61,10 @@ resource "google_storage_bucket" "source_bucket" {
   name                        = "${var.project_id}-alerting-source-${var.environment}"
   location                    = var.region
   uniform_bucket_level_access = true
+
+  labels = {
+    component = "custom-alerting"
+  }
 }
 
 resource "google_storage_bucket_object" "function_zip" {
@@ -76,14 +80,16 @@ resource "google_storage_bucket_iam_member" "config_reader" {
   member = "serviceAccount:${google_service_account.alert_sa.email}"
 }
 
-# ==========================================
 # 3. COMPUTE: CLOUD RUN FUNCTION
-# ==========================================
 
 resource "google_cloudfunctions2_function" "alerting_function" {
   project  = var.project_id
   name     = "behavio-alerting-${var.environment}"
   location = var.region
+
+  labels = {
+    component = "custom-alerting"
+  }
 
   build_config {
     runtime     = "python312"
@@ -118,7 +124,6 @@ resource "google_cloudfunctions2_function" "alerting_function" {
   }
 }
 
-# Allow the SA to invoke its own Cloud Run function via the Scheduler
 resource "google_cloud_run_v2_service_iam_member" "invoker" {
   project  = google_cloudfunctions2_function.alerting_function.project
   location = google_cloudfunctions2_function.alerting_function.location
@@ -127,9 +132,7 @@ resource "google_cloud_run_v2_service_iam_member" "invoker" {
   member   = "serviceAccount:${google_service_account.alert_sa.email}"
 }
 
-# ==========================================
 # 4. ORCHESTRATION: CLOUD SCHEDULER
-# ==========================================
 
 resource "google_cloud_scheduler_job" "trigger_job" {
   project   = var.project_id

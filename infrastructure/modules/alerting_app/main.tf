@@ -136,9 +136,9 @@ resource "google_cloud_run_v2_service_iam_member" "invoker" {
 # 4. ORCHESTRATION: CLOUD SCHEDULER
 
 resource "google_cloud_scheduler_job" "trigger_job" {
-  project  = var.project_id
-  region   = var.region
-  name     = "alerting-trigger-${var.environment}"
+  project   = var.project_id
+  region    = var.region
+  name      = "alerting-trigger-${var.environment}"
   schedule  = "5 5 * * 6"
   time_zone = "Europe/Prague"
 
@@ -158,9 +158,9 @@ resource "google_cloud_scheduler_job" "trigger_job" {
 }
 
 resource "google_cloud_scheduler_job" "report_job" {
-  project  = var.project_id
-  region   = var.region
-  name     = "alerting-report-${var.environment}"
+  project   = var.project_id
+  region    = var.region
+  name      = "alerting-report-${var.environment}"
   schedule  = "0 5 * * 6"
   time_zone = "Europe/Prague"
 

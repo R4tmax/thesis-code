@@ -97,7 +97,8 @@ resource "google_cloudfunctions2_function" "alerting_function" {
   }
 
   service_config {
-    max_instance_count    = 2
+    min_instance_count    = 0
+    max_instance_count    = 1
     available_memory      = "256M"
     timeout_seconds       = 60
     service_account_email = google_service_account.alert_sa.email
@@ -134,7 +135,8 @@ resource "google_cloud_scheduler_job" "trigger_job" {
   project   = var.project_id
   region    = var.region
   name      = "alerting-trigger-${var.environment}"
-  schedule  = "5 5 * * * 6"
+  schedule  = "5 * * * *"
+#  schedule  = "5 5 * * 6"
   time_zone = "Europe/Prague"
 
   http_target {
@@ -153,7 +155,8 @@ resource "google_cloud_scheduler_job" "report_job" {
   project   = var.project_id
   region    = var.region
   name      = "alerting-report-${var.environment}"
-  schedule  = "0 5 * * 6"
+  schedule  = "0 * * * *"
+#  schedule  = "0 5 * * 6"
   time_zone = "Europe/Prague"
 
   http_target {

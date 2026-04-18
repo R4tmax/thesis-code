@@ -46,6 +46,11 @@ resource "google_cloud_run_v2_service" "app_service" {
   location = var.location
   project  = var.project_id
 
+  scaling {
+    min_instance_count = 0
+    max_instance_count = 1
+  }
+
   template {
     service_account = google_service_account.app_sa.email
 

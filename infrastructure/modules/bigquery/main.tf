@@ -15,7 +15,59 @@ resource "google_bigquery_table" "invoices_table" {
 
   deletion_protection = var.deletion_protection
 
+  schema = <<EOF
+[
+  {
+    "name": "invoice_id",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Unique identifier for the invoice"
+  },
+  {
+    "name": "customer_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "customer_name",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "issue_date",
+    "type": "DATE",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "due_date",
+    "type": "DATE",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "amount",
+    "type": "NUMERIC",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "currency",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "status",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "paid_date",
+    "type": "DATE",
+    "mode": "NULLABLE"
+  }
+]
+EOF
 }
+
+
 
 resource "google_bigquery_table" "alert_view" {
   dataset_id = google_bigquery_dataset.main.dataset_id

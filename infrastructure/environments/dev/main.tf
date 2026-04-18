@@ -101,7 +101,6 @@ module "mailgun_dns" {
   description = "DNS zone for usage for Mailgun API client"
 }
 
-
 module "alerting_app" {
   depends_on = [google_project_service.enabled_apis]
   source     = "../../modules/alerting_app"

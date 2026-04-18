@@ -46,7 +46,7 @@ resource "google_project_iam_member" "sa_impersonation_role" {
 }
 
 resource "google_storage_bucket_iam_member" "sa_state_bucket_admin" {
-  bucket = "thesis-kadm09-dev_state_bucket"
+  bucket = "${var.proj_id}_state_bucket"
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${google_service_account.github_actions_sa.email}"
 }

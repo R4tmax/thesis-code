@@ -1,0 +1,67 @@
+name: 'App CI'
+
+on:
+  workflow_call:
+
+jobs:
+  validate_source_code:
+    name: 'Ruff linter'
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+#      - name: Set up Python
+#        uses: actions/setup-python@v5
+#        with:
+#          python-version: '3.14'
+
+      - name: Verify Py version
+        run: python --version
+
+      # Note, as covered in the main text
+      # self hosted runners used in the work run
+      # on CachyOS, which uses Arch as upstream
+      # Arch limits global pip installs to protect OS stability
+      - name: Install and Run Ruff (venv)
+        run: |
+          echo "Setting up Virtual Environment..."
+          python -m venv .venv
+          source .venv/bin/activate
+          
+          echo "Installing Ruff..."
+          pip install ruff
+          
+          echo "Linting source code (Non-Blocking)..."
+          ruff check src/ --output-format=github --exit-zero 
+
+  test_docker_build:
+    name: 'Test BehavioBot build'
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+#      - name: Generate requirements.txt (uv)
+#        run: |
+#          echo "Setting up temporary venv for uv..."
+#          python -m venv .venv-uv
+#          source .venv-uv/bin/activate
+#
+#          echo "Installing uv..."
+#          pip install uv
+#
+#          echo "Translating uv.lock into requirements.txt..."
+#          uv export --format requirements-txt --no-hashes > src/BehavioBOT/requirements.txt
+#
+#          deactivate
+
+      - name: Mock dynamic files
+        run: |
+          echo "Creating dummy tables.yaml for build context..."
+          touch src/BehavioBOT/tables.yaml
+
+      - name: Dry-Run Docker Build
+        run: |
+          echo "Testing Docker build compilation..."
+          docker build -t behavio-bot-test-build ./src/BehavioBOT

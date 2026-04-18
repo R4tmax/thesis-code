@@ -1,0 +1,36 @@
+name: 'CI Orchestrator'
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - prod
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+jobs:
+  app_ci:
+    uses: ./.github/workflows/ci_app.yml
+
+  tf_ci_dev:
+    if: github.base_ref == 'dev'
+    uses: ./.github/workflows/ci_tf.yml
+    with:
+      environment: 'dev'
+    secrets:
+      WIF_PROVIDER: ${{ secrets.GCP_DEV_WIF_PROVIDER }}
+      CICD_SA: ${{ secrets.GCP_DEV_CICD_SA }}
+      PROJECT_ID: ${{ secrets.GCP_DEV_PROJECT_ID }}
+
+  tf_ci_prod:
+    if: github.base_ref == 'prod'
+    uses: ./.github/workflows/ci_tf.yml
+    with:
+      environment: 'prod'
+    secrets:
+      WIF_PROVIDER: ${{ secrets.GCP_PROD_WIF_PROVIDER }}
+      CICD_SA: ${{ secrets.GCP_PROD_CICD_SA }}
+      PROJECT_ID: ${{ secrets.GCP_PROD_PROJECT_ID }}

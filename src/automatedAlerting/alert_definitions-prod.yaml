@@ -1,0 +1,9 @@
+- name: "Total Invoices Counter"
+  view: "thesis-kadm09-prod.financial_prod.view_alert_total_invoices"
+  message_template: "Pipeline Success! There are currently {{count}} invoices in the database."
+  link: "https://www.w3.org/WAI/ARIA/apg/patterns/link/examples/link/"
+  recipients:
+    - "kadlec.m.90@gmail.com"
+  alert_kind: "trigger"
+  enabled: true
+  threshold: 0

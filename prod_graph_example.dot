@@ -1,0 +1,138 @@
+digraph G {
+  rankdir = "RL";
+  node [shape = rect, fontname = "sans-serif"];
+  "google_artifact_registry_repository.app_registry" [label="google_artifact_registry_repository.app_registry"];
+  "google_iam_workload_identity_pool.github_pool" [label="google_iam_workload_identity_pool.github_pool"];
+  "google_iam_workload_identity_pool_provider.github_provider" [label="google_iam_workload_identity_pool_provider.github_provider"];
+  "google_project_iam_member.sa_app_acc_role" [label="google_project_iam_member.sa_app_acc_role"];
+  "google_project_iam_member.sa_ar_role" [label="google_project_iam_member.sa_ar_role"];
+  "google_project_iam_member.sa_bigquery_admin" [label="google_project_iam_member.sa_bigquery_admin"];
+  "google_project_iam_member.sa_binding_role" [label="google_project_iam_member.sa_binding_role"];
+  "google_project_iam_member.sa_cloudfunctions_admin" [label="google_project_iam_member.sa_cloudfunctions_admin"];
+  "google_project_iam_member.sa_default_role" [label="google_project_iam_member.sa_default_role"];
+  "google_project_iam_member.sa_dns_admin" [label="google_project_iam_member.sa_dns_admin"];
+  "google_project_iam_member.sa_iam_admin_role" [label="google_project_iam_member.sa_iam_admin_role"];
+  "google_project_iam_member.sa_impersonation_role" [label="google_project_iam_member.sa_impersonation_role"];
+  "google_project_iam_member.sa_run_admin_role" [label="google_project_iam_member.sa_run_admin_role"];
+  "google_project_iam_member.sa_scheduler_admin" [label="google_project_iam_member.sa_scheduler_admin"];
+  "google_project_iam_member.sa_service_usage_admin" [label="google_project_iam_member.sa_service_usage_admin"];
+  "google_project_iam_member.sa_storage_admin" [label="google_project_iam_member.sa_storage_admin"];
+  "google_project_service.enabled_apis" [label="google_project_service.enabled_apis"];
+  "google_service_account.github_actions_sa" [label="google_service_account.github_actions_sa"];
+  "google_service_account_iam_member.github_actions_sa_binding" [label="google_service_account_iam_member.github_actions_sa_binding"];
+  "google_storage_bucket_iam_member.sa_state_bucket_admin" [label="google_storage_bucket_iam_member.sa_state_bucket_admin"];
+  subgraph "cluster_module.alerting_app" {
+    label = "module.alerting_app"
+    fontname = "sans-serif"
+    "module.alerting_app.data.google_secret_manager_secret.mailgun_api" [label="data.google_secret_manager_secret.mailgun_api"];
+    "module.alerting_app.data.google_secret_manager_secret.mailgun_domain" [label="data.google_secret_manager_secret.mailgun_domain"];
+    "module.alerting_app.google_cloud_run_v2_service_iam_member.invoker" [label="google_cloud_run_v2_service_iam_member.invoker"];
+    "module.alerting_app.google_cloud_scheduler_job.report_job" [label="google_cloud_scheduler_job.report_job"];
+    "module.alerting_app.google_cloud_scheduler_job.trigger_job" [label="google_cloud_scheduler_job.trigger_job"];
+    "module.alerting_app.google_cloudfunctions2_function.alerting_function" [label="google_cloudfunctions2_function.alerting_function"];
+    "module.alerting_app.google_project_iam_member.bq_data_viewer" [label="google_project_iam_member.bq_data_viewer"];
+    "module.alerting_app.google_project_iam_member.bq_job_user" [label="google_project_iam_member.bq_job_user"];
+    "module.alerting_app.google_secret_manager_secret_iam_member.api_accessor" [label="google_secret_manager_secret_iam_member.api_accessor"];
+    "module.alerting_app.google_secret_manager_secret_iam_member.domain_accessor" [label="google_secret_manager_secret_iam_member.domain_accessor"];
+    "module.alerting_app.google_service_account.alert_sa" [label="google_service_account.alert_sa"];
+    "module.alerting_app.google_storage_bucket.config_bucket" [label="google_storage_bucket.config_bucket"];
+    "module.alerting_app.google_storage_bucket.source_bucket" [label="google_storage_bucket.source_bucket"];
+    "module.alerting_app.google_storage_bucket_iam_member.config_reader" [label="google_storage_bucket_iam_member.config_reader"];
+    "module.alerting_app.google_storage_bucket_object.function_zip" [label="google_storage_bucket_object.function_zip"];
+  }
+  subgraph "cluster_module.bigquery_database" {
+    label = "module.bigquery_database"
+    fontname = "sans-serif"
+    "module.bigquery_database.google_bigquery_dataset.main" [label="google_bigquery_dataset.main"];
+    "module.bigquery_database.google_bigquery_table.alert_view" [label="google_bigquery_table.alert_view"];
+    "module.bigquery_database.google_bigquery_table.invoices_table" [label="google_bigquery_table.invoices_table"];
+  }
+  subgraph "cluster_module.mailgun_dns" {
+    label = "module.mailgun_dns"
+    fontname = "sans-serif"
+    "module.mailgun_dns.data.google_secret_manager_secret_version.mailgun_dkim_payload" [label="data.google_secret_manager_secret_version.mailgun_dkim_payload"];
+    "module.mailgun_dns.google_dns_managed_zone.mailgun_dns_zone" [label="google_dns_managed_zone.mailgun_dns_zone"];
+    "module.mailgun_dns.google_dns_record_set.mailgun_cname" [label="google_dns_record_set.mailgun_cname"];
+    "module.mailgun_dns.google_dns_record_set.mailgun_dkim" [label="google_dns_record_set.mailgun_dkim"];
+    "module.mailgun_dns.google_dns_record_set.mailgun_mx" [label="google_dns_record_set.mailgun_mx"];
+    "module.mailgun_dns.google_dns_record_set.mailgun_spf" [label="google_dns_record_set.mailgun_spf"];
+  }
+  subgraph "cluster_module.nlp_app" {
+    label = "module.nlp_app"
+    fontname = "sans-serif"
+    "module.nlp_app.data.google_secret_manager_secret.oauth_client_secret" [label="data.google_secret_manager_secret.oauth_client_secret"];
+    "module.nlp_app.google_bigquery_dataset_iam_member.bq_data_viewer" [label="google_bigquery_dataset_iam_member.bq_data_viewer"];
+    "module.nlp_app.google_cloud_run_v2_service.app_service" [label="google_cloud_run_v2_service.app_service"];
+    "module.nlp_app.google_cloud_run_v2_service_iam_member.public" [label="google_cloud_run_v2_service_iam_member.public"];
+    "module.nlp_app.google_project_iam_member.bq_job_user" [label="google_project_iam_member.bq_job_user"];
+    "module.nlp_app.google_project_iam_member.bq_read_session_user" [label="google_project_iam_member.bq_read_session_user"];
+    "module.nlp_app.google_project_iam_member.vertex_user" [label="google_project_iam_member.vertex_user"];
+    "module.nlp_app.google_secret_manager_secret_iam_member.secret_accessor" [label="google_secret_manager_secret_iam_member.secret_accessor"];
+    "module.nlp_app.google_service_account.app_sa" [label="google_service_account.app_sa"];
+  }
+  subgraph "cluster_module.state_bucket" {
+    label = "module.state_bucket"
+    fontname = "sans-serif"
+    "module.state_bucket.google_storage_bucket.remote_state_bucket" [label="google_storage_bucket.remote_state_bucket"];
+  }
+  "google_artifact_registry_repository.app_registry" -> "google_project_service.enabled_apis";
+  "google_iam_workload_identity_pool_provider.github_provider" -> "google_iam_workload_identity_pool.github_pool";
+  "google_project_iam_member.sa_app_acc_role" -> "google_service_account.github_actions_sa";
+  "google_project_iam_member.sa_ar_role" -> "google_service_account.github_actions_sa";
+  "google_project_iam_member.sa_bigquery_admin" -> "google_service_account.github_actions_sa";
+  "google_project_iam_member.sa_binding_role" -> "google_service_account.github_actions_sa";
+  "google_project_iam_member.sa_cloudfunctions_admin" -> "google_service_account.github_actions_sa";
+  "google_project_iam_member.sa_default_role" -> "google_service_account.github_actions_sa";
+  "google_project_iam_member.sa_dns_admin" -> "google_service_account.github_actions_sa";
+  "google_project_iam_member.sa_iam_admin_role" -> "google_service_account.github_actions_sa";
+  "google_project_iam_member.sa_impersonation_role" -> "google_service_account.github_actions_sa";
+  "google_project_iam_member.sa_run_admin_role" -> "google_service_account.github_actions_sa";
+  "google_project_iam_member.sa_scheduler_admin" -> "google_service_account.github_actions_sa";
+  "google_project_iam_member.sa_service_usage_admin" -> "google_service_account.github_actions_sa";
+  "google_project_iam_member.sa_storage_admin" -> "google_service_account.github_actions_sa";
+  "google_service_account_iam_member.github_actions_sa_binding" -> "google_iam_workload_identity_pool.github_pool";
+  "google_service_account_iam_member.github_actions_sa_binding" -> "google_service_account.github_actions_sa";
+  "google_storage_bucket_iam_member.sa_state_bucket_admin" -> "google_service_account.github_actions_sa";
+  "module.alerting_app.data.google_secret_manager_secret.mailgun_api" -> "google_project_service.enabled_apis";
+  "module.alerting_app.data.google_secret_manager_secret.mailgun_domain" -> "google_project_service.enabled_apis";
+  "module.alerting_app.google_cloud_run_v2_service_iam_member.invoker" -> "module.alerting_app.google_cloudfunctions2_function.alerting_function";
+  "module.alerting_app.google_cloud_scheduler_job.report_job" -> "module.alerting_app.google_cloudfunctions2_function.alerting_function";
+  "module.alerting_app.google_cloud_scheduler_job.trigger_job" -> "module.alerting_app.google_cloudfunctions2_function.alerting_function";
+  "module.alerting_app.google_cloudfunctions2_function.alerting_function" -> "module.alerting_app.google_service_account.alert_sa";
+  "module.alerting_app.google_cloudfunctions2_function.alerting_function" -> "module.alerting_app.google_storage_bucket.config_bucket";
+  "module.alerting_app.google_cloudfunctions2_function.alerting_function" -> "module.alerting_app.google_storage_bucket_object.function_zip";
+  "module.alerting_app.google_project_iam_member.bq_data_viewer" -> "module.alerting_app.google_service_account.alert_sa";
+  "module.alerting_app.google_project_iam_member.bq_job_user" -> "module.alerting_app.google_service_account.alert_sa";
+  "module.alerting_app.google_secret_manager_secret_iam_member.api_accessor" -> "module.alerting_app.data.google_secret_manager_secret.mailgun_api";
+  "module.alerting_app.google_secret_manager_secret_iam_member.api_accessor" -> "module.alerting_app.google_service_account.alert_sa";
+  "module.alerting_app.google_secret_manager_secret_iam_member.domain_accessor" -> "module.alerting_app.data.google_secret_manager_secret.mailgun_domain";
+  "module.alerting_app.google_secret_manager_secret_iam_member.domain_accessor" -> "module.alerting_app.google_service_account.alert_sa";
+  "module.alerting_app.google_service_account.alert_sa" -> "google_project_service.enabled_apis";
+  "module.alerting_app.google_storage_bucket.config_bucket" -> "google_project_service.enabled_apis";
+  "module.alerting_app.google_storage_bucket.source_bucket" -> "google_project_service.enabled_apis";
+  "module.alerting_app.google_storage_bucket_iam_member.config_reader" -> "module.alerting_app.google_service_account.alert_sa";
+  "module.alerting_app.google_storage_bucket_iam_member.config_reader" -> "module.alerting_app.google_storage_bucket.config_bucket";
+  "module.alerting_app.google_storage_bucket_object.function_zip" -> "module.alerting_app.google_storage_bucket.source_bucket";
+  "module.bigquery_database.google_bigquery_dataset.main" -> "google_project_service.enabled_apis";
+  "module.bigquery_database.google_bigquery_table.alert_view" -> "module.bigquery_database.google_bigquery_table.invoices_table";
+  "module.bigquery_database.google_bigquery_table.invoices_table" -> "module.bigquery_database.google_bigquery_dataset.main";
+  "module.mailgun_dns.data.google_secret_manager_secret_version.mailgun_dkim_payload" -> "google_project_service.enabled_apis";
+  "module.mailgun_dns.google_dns_managed_zone.mailgun_dns_zone" -> "google_project_service.enabled_apis";
+  "module.mailgun_dns.google_dns_record_set.mailgun_cname" -> "module.mailgun_dns.google_dns_managed_zone.mailgun_dns_zone";
+  "module.mailgun_dns.google_dns_record_set.mailgun_dkim" -> "module.mailgun_dns.data.google_secret_manager_secret_version.mailgun_dkim_payload";
+  "module.mailgun_dns.google_dns_record_set.mailgun_dkim" -> "module.mailgun_dns.google_dns_managed_zone.mailgun_dns_zone";
+  "module.mailgun_dns.google_dns_record_set.mailgun_mx" -> "module.mailgun_dns.google_dns_managed_zone.mailgun_dns_zone";
+  "module.mailgun_dns.google_dns_record_set.mailgun_spf" -> "module.mailgun_dns.google_dns_managed_zone.mailgun_dns_zone";
+  "module.nlp_app.data.google_secret_manager_secret.oauth_client_secret" -> "google_project_service.enabled_apis";
+  "module.nlp_app.google_bigquery_dataset_iam_member.bq_data_viewer" -> "module.bigquery_database.google_bigquery_dataset.main";
+  "module.nlp_app.google_bigquery_dataset_iam_member.bq_data_viewer" -> "module.nlp_app.google_service_account.app_sa";
+  "module.nlp_app.google_cloud_run_v2_service.app_service" -> "module.nlp_app.data.google_secret_manager_secret.oauth_client_secret";
+  "module.nlp_app.google_cloud_run_v2_service.app_service" -> "module.nlp_app.google_service_account.app_sa";
+  "module.nlp_app.google_cloud_run_v2_service_iam_member.public" -> "module.nlp_app.google_cloud_run_v2_service.app_service";
+  "module.nlp_app.google_project_iam_member.bq_job_user" -> "module.nlp_app.google_service_account.app_sa";
+  "module.nlp_app.google_project_iam_member.bq_read_session_user" -> "module.nlp_app.google_service_account.app_sa";
+  "module.nlp_app.google_project_iam_member.vertex_user" -> "module.nlp_app.google_service_account.app_sa";
+  "module.nlp_app.google_secret_manager_secret_iam_member.secret_accessor" -> "module.nlp_app.data.google_secret_manager_secret.oauth_client_secret";
+  "module.nlp_app.google_secret_manager_secret_iam_member.secret_accessor" -> "module.nlp_app.google_service_account.app_sa";
+  "module.nlp_app.google_service_account.app_sa" -> "google_project_service.enabled_apis";
+}

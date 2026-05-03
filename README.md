@@ -1,4 +1,4 @@
-# Declarative Deployment of Analytical Applications in GCP
+# Declarative Deployment of Analytics Applications on GCP
 
 This repository holds code related to the master thesis with the above title.  
 Created by Martin Kadlec, year of defense is 2026.  

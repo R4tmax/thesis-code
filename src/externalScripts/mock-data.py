@@ -53,6 +53,5 @@ def generate_mock_invoices(n=200):
 
 if __name__ == "__main__":
     df = generate_mock_invoices(200)
-    # Save to CSV for bq load or further manipulation
     df.to_csv("mock_invoices.csv", index=False)
     print("Generated mock_invoices.csv with 200 rows.")

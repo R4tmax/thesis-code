@@ -21,7 +21,7 @@ REPO = "thesis-code"
 TOKEN = get_gh_token()
 CI_WORKFLOW = "CI Orchestrator"
 CD_WORKFLOW = "CD Orchestrator"
-RUN_LIMIT = 30  # Increased to gather a statistically significant sample size
+RUN_LIMIT = 999
 
 HEADERS = {
     "Authorization": f"Bearer {TOKEN}",
@@ -111,7 +111,6 @@ def main():
 
         pairs_found += 1
 
-        # Calculate overall Pipeline Level stats
         ci_duration = calc_duration(ci_run["created_at"], ci_run["updated_at"])
         cd_duration = calc_duration(matching_cd_run["created_at"], matching_cd_run["updated_at"])
 
@@ -123,7 +122,6 @@ def main():
             "Total Pipeline Wall-Clock (sec)": ci_duration + cd_duration
         })
 
-        # Process Job Level stats
         for job in get_jobs(ci_run["id"]):
             if job.get("conclusion") == "skipped" or not job.get("started_at"): continue
             job_data.append({
@@ -142,7 +140,6 @@ def main():
         print("No paired runs found.")
         return
 
-    # Load data into Pandas
     df_pipeline = pd.DataFrame(pipeline_data)
     df_jobs = pd.DataFrame(job_data)
 
@@ -151,30 +148,23 @@ def main():
     print("\n===========================================================================")
     print(f" 📊 MACRO LEVEL: PIPELINE EXECUTION STATISTICS (N={pairs_found} paired runs)")
     print("===========================================================================")
-    # Filter to only the numeric columns for the describe function
     pipe_stats = df_pipeline[["CI Duration (sec)", "CD Duration (sec)", "Total Pipeline Wall-Clock (sec)"]].describe(
         percentiles=quantiles_to_calc)
 
-    # Format the numeric output to string MM:SS format for readability
     pipe_stats_formatted = pipe_stats.apply(lambda x: x.map(format_seconds))
-    # Override the 'count' row so it remains an integer, not a time format
     pipe_stats_formatted.loc['count'] = pipe_stats.loc['count'].astype(int).astype(str)
     print(pipe_stats_formatted)
 
     print("\n===========================================================================")
     print(" 🔬 MICRO LEVEL: INDIVIDUAL JOB STATISTICS")
     print("===========================================================================")
-    # Group by Job Name and describe
     job_grouped = df_jobs.groupby("Job Name")["Duration (sec)"].describe(percentiles=quantiles_to_calc)
 
-    # Sort by the mean duration (longest jobs first)
     job_grouped = job_grouped.sort_values(by="mean", ascending=False)
 
-    # Format the numeric output to MM:SS
     job_grouped_formatted = job_grouped.apply(lambda x: x.map(format_seconds) if x.name != 'count' else x)
     job_grouped_formatted['count'] = job_grouped['count'].astype(int).astype(str)
 
-    # Pandas naturally truncates wide tables. We force it to print all columns.
     pd.set_option('display.max_columns', None)
     pd.set_option('display.width', 200)
     print(job_grouped_formatted)

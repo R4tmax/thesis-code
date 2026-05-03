@@ -22,7 +22,8 @@ REPO = "thesis-code"
 TOKEN = get_gh_token()
 CI_WORKFLOW = "CI Orchestrator"
 CD_WORKFLOW = "CD Orchestrator"
-RUN_LIMIT = 1  # Let's just generate the absolute latest composite run
+# Thesis used RUN LIMIT 1 to focus on a specific job, can be tweaked to output several runs for comparison
+RUN_LIMIT = 1
 
 HEADERS = {
     "Authorization": f"Bearer {TOKEN}",
@@ -101,11 +102,9 @@ def main():
 
         plot_data = []
 
-        # Process CI Jobs
         for job in ci_jobs:
             if job.get("conclusion") == "skipped" or not job.get("started_at"): continue
 
-            # Calculate duration for the hover text
             fmt = "%Y-%m-%dT%H:%M:%SZ"
             t_start = datetime.strptime(job['started_at'], fmt)
             t_end = datetime.strptime(job['completed_at'], fmt)
@@ -119,7 +118,6 @@ def main():
                 Duration=f"{duration_sec} seconds"
             ))
 
-        # Process CD Jobs
         for job in cd_jobs:
             if job.get("conclusion") == "skipped" or not job.get("started_at"): continue
 
@@ -136,10 +134,8 @@ def main():
                 Duration=f"{duration_sec} seconds"
             ))
 
-        # --- BUILD THE PLOTLY GRAPH ---
         df = pd.DataFrame(plot_data)
 
-        # Sort so the earliest jobs appear at the top of the graph
         df = df.sort_values(by="Start")
 
         fig = px.timeline(
@@ -153,17 +149,14 @@ def main():
             color_discrete_sequence=["#2ca02c", "#1f77b4"]  # Green for CI, Blue for CD
         )
 
-        # Invert the Y-axis so the first task is at the top
         fig.update_yaxes(autorange="reversed")
 
-        # Make the layout cleaner for an academic paper
         fig.update_layout(
             font=dict(family="Arial", size=12),
             showlegend=True,
-            title_x=0.5  # Center the title
+            title_x=0.5
         )
 
-        # Save to an interactive HTML file
         filename = f"pipeline_timeline_{branch}.html"
         fig.write_html(filename)
         print(f"✅ Success! Open '{filename}' in your web browser.")

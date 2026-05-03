@@ -29,7 +29,6 @@ def generate_yaml_schema():
 
         tables_dict[t_name]["columns"].append(f"| {row.column_name} | {row.data_type} |")
 
-    # Format it into the structure your app wants
     yaml_output = {"tables": []}
     for t_name, data in tables_dict.items():
         schema_string = "\n".join(data["columns"])
@@ -39,7 +38,6 @@ def generate_yaml_schema():
             "schema": schema_string
         })
 
-    # Write the file so Docker can copy it
     with open("tables.yaml", "w", encoding="utf-8") as f:
         yaml.dump(yaml_output, f, allow_unicode=True, sort_keys=False)
 

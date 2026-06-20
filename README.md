@@ -14,8 +14,7 @@ lack of dedicated and comprehensive works, which provide in depth explanations, 
 and baseline for others to utilize and build upon in their system.
 
 ## Environment consistency disclaimer
-Since every GCP artifact is monetized, all environments will be decommissioned pending the 
-acceptance of the thesis by the university, to prevent incurring running costs on dummy implementation.
+Related GCP ENVs decomissioned to prevent further cost incurring on the inactive projects.
 
 
 
